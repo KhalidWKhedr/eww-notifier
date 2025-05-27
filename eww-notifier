@@ -1,0 +1,135 @@
+#!/home/khalidwaleedkhedr/.local/share/eww-notifier-venv/bin/python3
+from pydbus import SessionBus
+from gi.repository import GLib
+import json
+import os
+import sys
+import requests
+import shutil
+
+MAX_NOTIFS = int(sys.argv[1]) if len(sys.argv) > 1 else 5
+NOTIF_PATH = os.path.expanduser("~/.cache/eww_notifications.json")
+ALBUM_ART_PATH = os.path.expanduser("~/.cache/spotify_album_art.jpg")
+notif_store = []
+
+def save_notifications():
+    os.makedirs(os.path.dirname(NOTIF_PATH), exist_ok=True)
+    with open(NOTIF_PATH, "w") as f:
+        json.dump(notif_store, f, indent=2)
+
+def resolve_icon_path(icon):
+    if os.path.isabs(icon) and os.path.exists(icon):
+        return icon
+
+    icon_dirs = [
+        "/usr/share/icons/Papirus/",
+        "/usr/share/icons/hicolor/",
+        "/usr/share/pixmaps/",
+        "/usr/share/icons/",
+    ]
+    icon_extensions = [".svg", ".png", ".xpm"]
+
+    for directory in icon_dirs:
+        for root, _, files in os.walk(directory):
+            for ext in icon_extensions:
+                file_name = icon + ext
+                if file_name in files:
+                    return os.path.join(root, file_name)
+    return ""
+
+def get_spotify_album_art():
+    try:
+        bus = SessionBus()
+        spotify = bus.get("org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2")
+        metadata = spotify.Metadata
+        url = metadata.get("mpris:artUrl", "")
+        if url.startswith("https://"):
+            r = requests.get(url, stream=True, timeout=3)
+            if r.status_code == 200:
+                with open(ALBUM_ART_PATH, "wb") as f:
+                    shutil.copyfileobj(r.raw, f)
+                return ALBUM_ART_PATH
+    except Exception as e:
+        print(f"[!] Failed to fetch MPRIS album art: {e}")
+    return ""
+
+class NotificationService:
+    """
+    <node>
+      <interface name="org.freedesktop.Notifications">
+        <method name="Notify">
+          <arg type="s" name="app_name" direction="in"/>
+          <arg type="u" name="replaces_id" direction="in"/>
+          <arg type="s" name="app_icon" direction="in"/>
+          <arg type="s" name="summary" direction="in"/>
+          <arg type="s" name="body" direction="in"/>
+          <arg type="as" name="actions" direction="in"/>
+          <arg type="a{sv}" name="hints" direction="in"/>
+          <arg type="i" name="expire_timeout" direction="in"/>
+          <arg type="u" name="id" direction="out"/>
+        </method>
+        <method name="CloseNotification">
+          <arg type="u" name="id" direction="in"/>
+        </method>
+        <method name="GetCapabilities">
+          <arg type="as" name="capabilities" direction="out"/>
+        </method>
+        <method name="GetServerInformation">
+          <arg type="s" name="name" direction="out"/>
+          <arg type="s" name="vendor" direction="out"/>
+          <arg type="s" name="version" direction="out"/>
+          <arg type="s" name="spec_version" direction="out"/>
+        </method>
+      </interface>
+    </node>
+    """
+    def Notify(self, app_name, replaces_id, app_icon, summary, body,
+               actions, hints, expire_timeout):
+
+        if app_name.lower() == "spotify":
+            resolved_icon = get_spotify_album_art()
+        else:
+            resolved_icon = resolve_icon_path(app_icon)
+
+        notif = {
+            "app": app_name,
+            "icon": resolved_icon,
+            "summary": summary,
+            "body": body
+        }
+
+        print(f"[+] Notification received:\n"
+              f"    App: {app_name}\n"
+              f"    Summary: {summary}\n"
+              f"    Body: {body}\n"
+              f"    Icon: {resolved_icon if resolved_icon else 'None'}")
+
+        notif_store.insert(0, notif)
+        if len(notif_store) > MAX_NOTIFS:
+            notif_store.pop()
+
+        save_notifications()
+        return 0
+
+    def CloseNotification(self, id):
+        print(f"[-] Notification with ID {id} closed")
+        return
+
+    def GetCapabilities(self):
+        return ["body", "icon"]
+
+    def GetServerInformation(self):
+        return "eww-notifier", "custom", "1.0", "1.2"
+
+def main():
+    try:
+        bus = SessionBus()
+        bus.publish("org.freedesktop.Notifications", NotificationService())
+        print("📬 Listening for notifications on DBus...")
+        GLib.MainLoop().run()
+    except Exception as e:
+        print(f"[!] Failed to start notification service: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
