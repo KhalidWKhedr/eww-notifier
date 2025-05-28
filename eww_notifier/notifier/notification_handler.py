@@ -15,52 +15,13 @@ from gi.repository import GLib
 from pydbus import SessionBus
 
 from eww_notifier.icon_config import APP_ICONS
-from eww_notifier.config import URGENCY_LEVELS, DEFAULT_TIMEOUT
+from eww_notifier.config import DEFAULT_TIMEOUT
 from eww_notifier.notification_queue.notification_queue import NotificationQueue
 from eww_notifier.spotify.spotify_handler import SpotifyHandler
 from eww_notifier.utils import find_icon_path
+from eww_notifier.notifier.notification_utils import get_urgency, process_actions, process_hints
 
 logger = logging.getLogger(__name__)
-
-
-def _get_urgency(hints: Dict[str, Any]) -> str:
-    """Get the urgency level from hints."""
-    if hints and isinstance(hints, dict):
-        urgency = hints.get('urgency')
-        if urgency is not None:
-            return URGENCY_LEVELS.get(urgency, 'normal')
-    return 'normal'
-
-
-def _process_actions(actions: List[str]) -> List[Dict[str, str]]:
-    """Process notification actions into a list of dictionaries."""
-    processed_actions = []
-    if actions and isinstance(actions, list):
-        for i in range(0, len(actions), 2):
-            if i + 1 < len(actions):
-                processed_actions.append({
-                    'id': actions[i],
-                    'label': actions[i + 1]
-                })
-    return processed_actions
-
-
-def _process_hints(hints: Dict[str, Any]) -> Dict[str, Any]:
-    """Process notification hints into a clean dictionary."""
-    processed_hints = {}
-    if hints and isinstance(hints, dict):
-        for key, value in hints.items():
-            # Skip byte arrays and D-Bus variants
-            if isinstance(value, (dbus.Array, dbus.Byte, dbus.ByteArray)):
-                continue
-            if isinstance(value, (str, int, float, bool)):
-                processed_hints[key] = value
-            elif hasattr(value, 'unpack'):
-                unpacked = value.unpack()
-                # Skip byte arrays in unpacked values too
-                if not isinstance(unpacked, (dbus.Array, dbus.Byte, dbus.ByteArray)):
-                    processed_hints[key] = unpacked
-    return processed_hints
 
 
 class NotificationHandler(dbus.service.Object):
@@ -117,13 +78,13 @@ class NotificationHandler(dbus.service.Object):
             notif_id = replaces_id if replaces_id else self._generate_notification_id(app_name, summary, body)
 
             # Process urgency level
-            urgency = _get_urgency(hints)
+            urgency = get_urgency(hints)
 
             # Process actions
-            processed_actions = _process_actions(actions)
+            processed_actions = process_actions(actions)
 
             # Process hints
-            processed_hints = _process_hints(hints)
+            processed_hints = process_hints(hints)
 
             # Get icon and image
             icon, image = self._get_icon_and_image(app_name, app_icon, hints)
