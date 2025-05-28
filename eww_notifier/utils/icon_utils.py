@@ -1,24 +1,26 @@
 """
-Utility functions for the notification system.
+Icon utility functions.
 """
 
-import os
 import logging
+import os
 from pathlib import Path
 from typing import Optional
+
 from eww_notifier.icon_config import ICON_DIRS, ICON_SIZES, ICON_EXTENSIONS, APP_ICONS
-from eww_notifier.utils import get_theme_icon, get_desktop_icon, find_icon_path
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['get_theme_icon', 'get_desktop_icon', 'find_icon_path']
-
-# Re-export the functions from the utils package
-get_theme_icon = get_theme_icon
-get_desktop_icon = get_desktop_icon
-find_icon_path = find_icon_path
 
 def get_theme_icon(icon_name: str) -> Optional[str]:
+    """Get the path to a theme icon.
+    
+    Args:
+        icon_name: Name of the icon to find
+        
+    Returns:
+        Optional[str]: Path to the icon if found, None otherwise
+    """
     for base_dir in ICON_DIRS:
         base_path = Path(base_dir)
 
@@ -40,7 +42,16 @@ def get_theme_icon(icon_name: str) -> Optional[str]:
 
     return None
 
+
 def get_desktop_icon(app_id: str) -> Optional[str]:
+    """Get the icon path from a desktop file.
+    
+    Args:
+        app_id: The application ID to find the desktop file for
+        
+    Returns:
+        Optional[str]: Path to the icon if found, None otherwise
+    """
     try:
         desktop_paths = [
             Path.home() / ".local/share/applications",
@@ -60,7 +71,17 @@ def get_desktop_icon(app_id: str) -> Optional[str]:
         logger.debug(f"Failed to get desktop icon for {app_id}: {e}")
     return None
 
+
 def find_icon_path(icon_name: str, is_recursive: bool = False) -> str:
+    """Find the path to an icon file.
+    
+    Args:
+        icon_name: Name of the icon to find
+        is_recursive: Whether this is a recursive call (to avoid infinite recursion)
+        
+    Returns:
+        str: Path to the icon file
+    """
     try:
         if os.path.isabs(icon_name) and os.path.exists(icon_name):
             return icon_name
@@ -107,4 +128,4 @@ def find_icon_path(icon_name: str, is_recursive: bool = False) -> str:
 
     except Exception as e:
         logger.error(f"Error finding icon path for {icon_name}: {e}")
-        return "/usr/share/icons/hicolor/scalable/apps/dialog-information.svg"
+        return "/usr/share/icons/hicolor/scalable/apps/dialog-information.svg" 

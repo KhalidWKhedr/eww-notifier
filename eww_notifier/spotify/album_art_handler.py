@@ -7,13 +7,10 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import requests
 
+from eww_notifier.utils.file_utils import get_file_size_mb
+
 # Configure logging
 logger = logging.getLogger(__name__)
-
-
-def get_file_size_mb(path: Path) -> float:
-    """Get file size in megabytes."""
-    return path.stat().st_size / (1024 * 1024)
 
 
 class AlbumArtHandler:
