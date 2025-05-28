@@ -12,6 +12,8 @@ import time
 from typing import Dict, Any, Optional
 from urllib.parse import urlparse, unquote
 import hashlib
+from pydbus import SessionBus
+from .album_art_handler import AlbumArtHandler
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,7 @@ class SpotifyHandler:
         self.album_art_dir = SPOTIFY_ALBUM_ART_DIR
         self._ensure_directories()
         self.metadata_cache = self._load_metadata_cache()
+        self.album_art_handler = AlbumArtHandler()
         self._cleanup_cache()
 
     def _ensure_directories(self):
@@ -65,45 +68,21 @@ class SpotifyHandler:
         """Get metadata for a notification."""
         return self.metadata_cache.get(notification_id)
 
-    def get_album_art_path(self, notification_id: str, url: str) -> Optional[str]:
-        """Get album art path for a notification, downloading if necessary."""
+    def get_album_art_path(self, notification_id: str, url_or_data: Any) -> Optional[str]:
+        """Get album art path for a notification."""
         try:
-            # Check if we already have the album art cached
-            # Use a hash of the URL as the key to handle different notifications for the same track
-            url_hash = hashlib.md5(url.encode()).hexdigest()
-            if url_hash in self.metadata_cache and 'album_art_path' in self.metadata_cache[url_hash]:
-                 return self.metadata_cache[url_hash]['album_art_path']
-
-            # Download and cache album art
-            album_art_path = self._download_album_art(url_hash, url)
-            if album_art_path:
-                self.update_metadata(url_hash, {'album_art_path': album_art_path})
-                return album_art_path
-
+            # Get album art URL from MPRIS
+            bus = SessionBus()
+            spotify = bus.get("org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2")
+            metadata = spotify.Metadata
+            url = metadata.get("mpris:artUrl", "")
+            if url.startswith("https://"):
+                logger.info(f"Got album art URL from MPRIS: {url}")
+                return self.album_art_handler.get_album_art_path(url)
             return None
+
         except Exception as e:
             logger.error(f"Error getting album art path: {e}")
-            return None
-
-    def _download_album_art(self, file_id: str, url: str) -> Optional[str]:
-        """Download album art and save to cache directory."""
-        try:
-            # Create cache path with the given file_id and jpg extension
-            cache_path = self.album_art_dir / f"{file_id}.jpg"
-
-            # Download image
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-
-            # Save image
-            with open(cache_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-
-            logger.info(f"Downloaded album art to {cache_path}")
-            return str(cache_path)
-        except Exception as e:
-            logger.error(f"Error downloading album art: {e}")
             return None
 
     def _cleanup_cache(self) -> None:

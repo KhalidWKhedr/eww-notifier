@@ -7,16 +7,19 @@ import signal
 import sys
 import time
 import hashlib
-from typing import Dict, Any, List, Optional
+import os
+from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 import dbus
 import dbus.service
 import dbus.mainloop.glib
 from gi.repository import GLib
+from pydbus import SessionBus
 
 from Testing.config import APP_ICONS, URGENCY_LEVELS, DEFAULT_TIMEOUT
 from Testing.spotify.spotify_handler import SpotifyHandler
 from Testing.notification_queue.notification_queue import NotificationQueue
+from Testing.utils import find_icon_path
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +60,19 @@ class NotificationHandler(dbus.service.Object):
     def Notify(self, app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout):
         """Handle incoming notification."""
         try:
+            # Log all hints for debugging
+            if app_name.lower() == 'spotify':
+                logger.info(f"Spotify notification received:")
+                logger.info(f"Summary: {summary}")
+                logger.info(f"Body: {body}")
+                if hints and isinstance(hints, dict):
+                    for key, value in hints.items():
+                        # Skip logging byte arrays and D-Bus variants
+                        if isinstance(value, (dbus.Array, dbus.Byte, dbus.ByteArray)):
+                            continue
+                        if isinstance(value, (str, int, float, bool)):
+                            logger.info(f"Hint '{key}': {value} (type: {type(value)})")
+
             # Generate a unique ID for this notification
             notif_id = replaces_id if replaces_id else self._generate_notification_id(app_name, summary, body)
 
@@ -69,15 +85,16 @@ class NotificationHandler(dbus.service.Object):
             # Process hints
             processed_hints = self._process_hints(hints)
 
-            # Get icon
-            icon = self._get_icon(app_name, app_icon, hints)
+            # Get icon and image
+            icon, image = self._get_icon_and_image(app_name, app_icon, hints)
 
             notification = {
                 'id': str(notif_id),
                 'app': app_name,
                 'summary': summary,
                 'body': body,
-                'icon': icon,
+                'icon': icon,  # App icon (24x24)
+                'image': image,  # Full-size image (like album art)
                 'urgency': urgency,
                 'actions': processed_actions,
                 'hints': processed_hints,
@@ -148,69 +165,102 @@ class NotificationHandler(dbus.service.Object):
         processed_hints = {}
         if hints and isinstance(hints, dict):
             for key, value in hints.items():
+                # Skip byte arrays and D-Bus variants
+                if isinstance(value, (dbus.Array, dbus.Byte, dbus.ByteArray)):
+                    continue
                 if isinstance(value, (str, int, float, bool)):
                     processed_hints[key] = value
                 elif hasattr(value, 'unpack'):
-                    processed_hints[key] = value.unpack() # Assuming this is a D-Bus variant
+                    unpacked = value.unpack()
+                    # Skip byte arrays in unpacked values too
+                    if not isinstance(unpacked, (dbus.Array, dbus.Byte, dbus.ByteArray)):
+                        processed_hints[key] = unpacked
         return processed_hints
 
-    def _get_icon(self, app_name: str, app_icon: str, hints: Dict[str, Any]) -> str:
-        """Get the appropriate icon for the notification."""
-        # Try hints first (image-path or image-data)
-        if hints and isinstance(hints, dict):
-            image_path = hints.get('image-path')
-            if image_path:
-                # Handle file:// URIs
-                if image_path.startswith('file://'):
-                    return Path(image_path[len('file://'):]).resolve().as_posix()
-                return image_path
+    def _get_icon_and_image(self, app_name: str, app_icon: str, hints: Dict[str, Any]) -> Tuple[str, Optional[str]]:
+        """Get both the app icon and any associated image (like album art)."""
+        try:
+            # Default values
+            icon = find_icon_path(app_icon or app_name.lower())
+            image = None
 
-            image_data = hints.get('image-data')
-            if image_data:
-                # Handle image-data hint (requires further processing, maybe save to temp file)
-                # For now, we'll just return a placeholder or default icon
-                logger.warning("image-data hint received, but not fully supported yet.")
-                return APP_ICONS.get(app_name.lower(), APP_ICONS['default'])
+            # Handle Spotify album art
+            if app_name.lower() == 'spotify':
+                # Try MPRIS first
+                try:
+                    bus = SessionBus()
+                    spotify = bus.get("org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2")
+                    metadata = spotify.Metadata
+                    url = metadata.get("mpris:artUrl", "")
+                    if url.startswith("https://"):
+                        logger.info(f"Got album art URL from MPRIS: {url}")
+                        album_art_path = self.spotify_handler.get_album_art_path("mpris", url)
+                        if album_art_path and os.path.exists(album_art_path):
+                            logger.info(f"Using album art from MPRIS: {album_art_path}")
+                            image = album_art_path
+                except Exception as e:
+                    logger.warning(f"Failed to get album art from MPRIS: {e}")
 
-        # Try app icon string (can be a name or a path)
-        if app_icon:
-             # Check if it's a full path
-            if Path(app_icon).is_absolute():
-                return Path(app_icon).resolve().as_posix()
-             # Otherwise assume it's an icon name
-            return app_icon
+                # Fallback to notification hints if MPRIS fails
+                if not image and hints:
+                    # Try to get album art from hints
+                    for key, value in hints.items():
+                        if isinstance(value, str) and value.startswith('https://'):
+                            album_art_path = self.spotify_handler.get_album_art_path("hint", value)
+                            if album_art_path and os.path.exists(album_art_path):
+                                logger.info(f"Using album art from hints: {album_art_path}")
+                                image = album_art_path
+                                break
 
-        # Try app name mapping
-        app_icon = APP_ICONS.get(app_name.lower())
-        if app_icon:
-            return app_icon
+            return icon, image
 
-        # Fallback to default
-        return APP_ICONS['default']
+        except Exception as e:
+            logger.error(f"Error getting icon and image: {e}")
+            return find_icon_path(APP_ICONS['default']), None
 
     def _handle_spotify_notification(self, notification: Dict[str, Any], hints: Dict[str, Any]) -> None:
         """Handle Spotify-specific notification features."""
-        if hints and isinstance(hints, dict):
-            # Get album art URL from hints (check both image-path and image_url)
-            album_art_url = hints.get('image-path') or hints.get('image_url')
+        try:
+            # Extract album art URL from hints
+            album_art_url = None
+            if hints and isinstance(hints, dict):
+                # Skip byte arrays and only process string values
+                for key, value in hints.items():
+                    if isinstance(value, (dbus.Array, dbus.Byte, dbus.ByteArray)):
+                        continue
+                    if key == 'image-path' and isinstance(value, str):
+                        album_art_url = value
+                        logger.debug(f"Found album art URL in image-path: {album_art_url}")
+                        break
+                    elif key in ['image_url', 'image'] and isinstance(value, str):
+                        album_art_url = value
+                        logger.debug(f"Found album art URL in hint '{key}': {album_art_url}")
+                        break
 
             if album_art_url:
-                # Use the spotify_handler to download and cache album art as a path
-                # Pass the notification ID and the album art URL to the spotify handler
-                album_art_path = self.spotify_handler.get_album_art_path(notification.get('id'), album_art_url)
-                if album_art_path:
-                    notification['icon'] = album_art_path # Update notification icon to the cached path
+                # Add image URL to notification
+                notification['image'] = album_art_url
+                logger.info(f"Added image URL to notification: {album_art_url}")
 
-            # Get additional Spotify metadata from hints
+                # Get album art path
+                album_art_path = self.spotify_handler.get_album_art_path(notification['id'], album_art_url)
+                if album_art_path and os.path.exists(album_art_path):
+                    # Update notification with album art path
+                    notification['image'] = album_art_path
+                    logger.info(f"Updated Spotify notification with album art: {album_art_path}")
+                else:
+                    logger.warning(f"Failed to get album art path for URL: {album_art_url}")
+
+            # Update metadata
             metadata = {
-                'artist': hints.get('xesam:artist', ''),
-                'album': hints.get('xesam:album', ''),
-                'title': hints.get('xesam:title', ''),
-                'track_id': hints.get('track-id', '')
+                'track_id': hints.get('track-id', 'unknown') if isinstance(hints.get('track-id'), str) else 'unknown',
+                'album_art_url': album_art_url,
+                'album_art_path': notification['image']
             }
-            # Add spotify_metadata to the notification dictionary if any metadata was found
-            if any(metadata.values()):
-                 notification['spotify_metadata'] = metadata
+            self.spotify_handler.update_metadata(notification['id'], metadata)
+
+        except Exception as e:
+            logger.error(f"Error handling Spotify notification: {e}")
 
     def process_notification(self, notification: Dict[str, Any]) -> None:
         """Process a notification dictionary and add it to the queue."""

@@ -13,6 +13,9 @@ from Testing.config import NOTIFICATION_CACHE_FILE, MAX_NOTIFICATIONS, UPDATE_CO
 
 logger = logging.getLogger(__name__)
 
+# Maximum age of notifications in seconds (1 hour)
+MAX_NOTIFICATION_AGE = 3600
+
 class NotificationQueue:
     """Queue for managing notifications with persistence."""
 
@@ -21,7 +24,8 @@ class NotificationQueue:
         self.cache_file = NOTIFICATION_CACHE_FILE
         self.cache_file.parent.mkdir(parents=True, exist_ok=True)
         self.last_update = 0
-        self.notifications = self._load_notifications()
+        self.notifications = []
+        self._load_notifications()
         self._cleanup_old_notifications()
 
     def _load_notifications(self) -> List[Dict[str, Any]]:
@@ -41,20 +45,25 @@ class NotificationQueue:
         try:
             with open(self.cache_file, 'w') as f:
                 json.dump(self.notifications, f, indent=2)
+            logger.debug(f"Saved {len(self.notifications)} notifications to cache")
         except Exception as e:
             logger.error(f"Error saving notifications: {e}")
 
     def _cleanup_old_notifications(self) -> None:
         """Clean up old notifications and ensure we don't exceed MAX_NOTIFICATIONS."""
         current_time = time.time()
-        # Remove notifications older than 24 hours
+        
+        # Remove notifications older than MAX_NOTIFICATION_AGE
         self.notifications = [
             n for n in self.notifications 
-            if current_time - n.get('timestamp', 0) < 24 * 60 * 60
+            if current_time - n.get('timestamp', 0) < MAX_NOTIFICATION_AGE
         ]
+        
         # Trim to max size
         if len(self.notifications) > MAX_NOTIFICATIONS:
             self.notifications = self.notifications[:MAX_NOTIFICATIONS]
+            logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries")
+        
         self._save_notifications()
 
     def add_notification(self, notification: Dict[str, Any]) -> None:
@@ -74,12 +83,17 @@ class NotificationQueue:
 
     def remove_notification(self, notification_id: str) -> None:
         """Remove a notification from the queue."""
+        initial_count = len(self.notifications)
         self.notifications = [n for n in self.notifications if n.get('id') != notification_id]
-        self._save_notifications()
-        self.update_eww_widget()
+        if len(self.notifications) < initial_count:
+            logger.info(f"Removed notification {notification_id}")
+            self._save_notifications()
+            self.update_eww_widget()
 
     def get_notifications(self) -> List[Dict[str, Any]]:
         """Get all notifications."""
+        # Clean up before returning
+        self._cleanup_old_notifications()
         return self.notifications
 
     def clear_notifications(self) -> None:
@@ -87,6 +101,7 @@ class NotificationQueue:
         self.notifications = []
         self._save_notifications()
         self.update_eww_widget()
+        logger.info("Cleared all notifications")
 
     def should_update(self) -> bool:
         """Check if enough time has passed since last update."""
