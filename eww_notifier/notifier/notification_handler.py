@@ -158,7 +158,7 @@ class NotificationHandler(dbus.service.Object):
                     url = metadata.get("mpris:artUrl", "")
                     if url.startswith("https://"):
                         logger.info(f"Got album art URL from MPRIS: {url}")
-                        album_art_path = self.spotify_handler.get_album_art_path("mpris", url)
+                        album_art_path = self.spotify_handler.get_album_art_path("mpris")
                         if album_art_path and os.path.exists(album_art_path):
                             logger.info(f"Using album art from MPRIS: {album_art_path}")
                             image = album_art_path
@@ -170,7 +170,7 @@ class NotificationHandler(dbus.service.Object):
                     # Try to get album art from hints
                     for key, value in hints.items():
                         if isinstance(value, str) and value.startswith('https://'):
-                            album_art_path = self.spotify_handler.get_album_art_path("hint", value)
+                            album_art_path = self.spotify_handler.get_album_art_path(value)
                             if album_art_path and os.path.exists(album_art_path):
                                 logger.info(f"Using album art from hints: {album_art_path}")
                                 image = album_art_path
@@ -207,7 +207,7 @@ class NotificationHandler(dbus.service.Object):
                 logger.info(f"Added image URL to notification: {album_art_url}")
 
                 # Get album art path
-                album_art_path = self.spotify_handler.get_album_art_path(notification['notification_id'], album_art_url)
+                album_art_path = self.spotify_handler.get_album_art_path(album_art_url)
                 if album_art_path and os.path.exists(album_art_path):
                     # Update notification with album art path
                     notification['image'] = album_art_path

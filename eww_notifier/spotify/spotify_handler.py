@@ -66,19 +66,36 @@ class SpotifyHandler:
         """Get metadata for a notification."""
         return self.metadata_cache.get(notification_id)
 
-    def get_album_art_path(self, notification_id: str, url_or_data: Any) -> Optional[str]:
-        """Get album art path for a notification."""
+    def get_album_art_path(self, url_or_data: Any) -> Optional[str]:
+        """Get album art path.
+        
+        Args:
+            url_or_data: Either a URL string or a source identifier ('mpris' or 'hint')
+            
+        Returns:
+            Optional[str]: Path to the album art file if successful, None otherwise
+        """
         try:
-            # Get album art URL from MPRIS
-            bus = SessionBus()
-            spotify = bus.get("org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2")
-            metadata = spotify.Metadata
-            url = metadata.get("mpris:artUrl", "")
-            if url.startswith("https://"):
-                logger.info(f"Got album art URL from MPRIS: {url}")
-                return self.album_art_handler.get_album_art_path(url)
+            # If url_or_data is a URL string, use it directly
+            if isinstance(url_or_data, str) and url_or_data.startswith('https://'):
+                logger.info(f"Using provided album art URL: {url_or_data}")
+                return self.album_art_handler.get_album_art_path(url_or_data)
+            
+            # If url_or_data is 'mpris', get URL from MPRIS
+            if url_or_data == 'mpris':
+                bus = SessionBus()
+                spotify = bus.get("org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2")
+                metadata = spotify.Metadata
+                url = metadata.get("mpris:artUrl", "")
+                if url.startswith("https://"):
+                    logger.info(f"Got album art URL from MPRIS: {url}")
+                    return self.album_art_handler.get_album_art_path(url)
+            
+            # If url_or_data is 'hint', we should have received a URL
+            if url_or_data == 'hint':
+                logger.warning("Expected URL for 'hint' source but none provided")
+            
             return None
-
         except Exception as e:
             logger.error(f"Error getting album art path: {e}")
             return None
