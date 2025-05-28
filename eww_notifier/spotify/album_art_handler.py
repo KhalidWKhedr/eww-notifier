@@ -10,6 +10,12 @@ import requests
 # Configure logging
 logger = logging.getLogger(__name__)
 
+
+def get_file_size_mb(path: Path) -> float:
+    """Get file size in megabytes."""
+    return path.stat().st_size / (1024 * 1024)
+
+
 class AlbumArtHandler:
     """Handler for managing album art downloads and caching."""
 
@@ -40,15 +46,11 @@ class AlbumArtHandler:
         except Exception as e:
             logger.error(f"Failed to setup cache: {e}")
 
-    def get_file_size_mb(self, path: Path) -> float:
-        """Get file size in megabytes."""
-        return path.stat().st_size / (1024 * 1024)
-
     def get_cache_size(self) -> float:
         """Get total size of album art cache in megabytes."""
         total_size = 0
         for file in self.ALBUM_ART_DIR.glob("*.jpg"):
-            total_size += self.get_file_size_mb(file)
+            total_size += get_file_size_mb(file)
         return total_size
 
     def load_album_art_cache(self) -> None:
@@ -98,7 +100,7 @@ class AlbumArtHandler:
             logger.error(f"Failed to cleanup old files: {e}")
 
     def enforce_cache_size_limit(self) -> None:
-        """Ensure cache size doesn't exceed the limit by removing oldest files."""
+        """Ensure cache size doesn't exceed the limit by removing the oldest files."""
         try:
             while self.get_cache_size() > self.MAX_CACHE_SIZE_MB:
                 oldest_file = min(
@@ -187,7 +189,7 @@ class AlbumArtHandler:
                     self.album_art_cache[url] = str(cache_path)
                     self.album_art_metadata[url] = {
                         'timestamp': time.time(),
-                        'size': self.get_file_size_mb(cache_path)
+                        'size': get_file_size_mb(cache_path)
                     }
                     self.save_album_art_cache()
                     self.check_cleanup()
@@ -197,8 +199,10 @@ class AlbumArtHandler:
                     logger.error(f"Attempt {attempt + 1} failed to download album art: {e}")
                     if attempt < self.MAX_RETRIES - 1:
                         time.sleep(self.RETRY_DELAY)
+                        return None
                     else:
                         return None
+            return None
 
         except Exception as e:
             logger.error(f"Error getting album art path: {e}")

@@ -110,7 +110,7 @@ class SpotifyHandler:
                 except Exception as e:
                     logger.error(f"Error removing old cache file {file_path}: {e}")
 
-            # If still over size limit, remove oldest files
+            # If still oversize limit, remove the oldest files
             if total_size > SPOTIFY_CACHE_MAX_SIZE:
                 files_by_age = sorted(
                     self.album_art_dir.glob("*"),
