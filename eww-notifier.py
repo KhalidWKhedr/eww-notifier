@@ -1,21 +1,19 @@
 #!/home/khalidwaleedkhedr/.local/share/eww-notifier-venv/bin/python3
-from pydbus import SessionBus
-from gi.repository import GLib, Gio
-import json
-import os
-import sys
-import requests
-import shutil
-import logging
 import hashlib
-import time
+import json
+import logging
+import os
+import shutil
 import signal
-import threading
-from typing import List, Dict, Any, Optional, Tuple
-from pathlib import Path
-from datetime import datetime, timedelta
+import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+
+import requests
+from gi.repository import GLib, Gio
+from pydbus import SessionBus
 
 # Configure logging
 logging.basicConfig(
