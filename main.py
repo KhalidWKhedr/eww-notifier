@@ -2,7 +2,6 @@
 Main entry point for the notification system.
 """
 
-import os
 import sys
 import logging
 import signal

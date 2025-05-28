@@ -1,5 +1,5 @@
 """
-Eww Notification System - A modern notification daemon for Eww widgets.
+Eww, Notification System - A modern notification daemon for Eww widgets.
 """
 
 __version__ = '0.1.0'
