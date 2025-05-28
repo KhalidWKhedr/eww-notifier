@@ -22,6 +22,47 @@ from eww_notifier.utils import find_icon_path
 
 logger = logging.getLogger(__name__)
 
+
+def _get_urgency(hints: Dict[str, Any]) -> str:
+    """Get the urgency level from hints."""
+    if hints and isinstance(hints, dict):
+        urgency = hints.get('urgency')
+        if urgency is not None:
+            return URGENCY_LEVELS.get(urgency, 'normal')
+    return 'normal'
+
+
+def _process_actions(actions: List[str]) -> List[Dict[str, str]]:
+    """Process notification actions into a list of dictionaries."""
+    processed_actions = []
+    if actions and isinstance(actions, list):
+        for i in range(0, len(actions), 2):
+            if i + 1 < len(actions):
+                processed_actions.append({
+                    'id': actions[i],
+                    'label': actions[i + 1]
+                })
+    return processed_actions
+
+
+def _process_hints(hints: Dict[str, Any]) -> Dict[str, Any]:
+    """Process notification hints into a clean dictionary."""
+    processed_hints = {}
+    if hints and isinstance(hints, dict):
+        for key, value in hints.items():
+            # Skip byte arrays and D-Bus variants
+            if isinstance(value, (dbus.Array, dbus.Byte, dbus.ByteArray)):
+                continue
+            if isinstance(value, (str, int, float, bool)):
+                processed_hints[key] = value
+            elif hasattr(value, 'unpack'):
+                unpacked = value.unpack()
+                # Skip byte arrays in unpacked values too
+                if not isinstance(unpacked, (dbus.Array, dbus.Byte, dbus.ByteArray)):
+                    processed_hints[key] = unpacked
+    return processed_hints
+
+
 class NotificationHandler(dbus.service.Object):
     """Notification handler for processing and managing system notifications."""
 
@@ -76,13 +117,13 @@ class NotificationHandler(dbus.service.Object):
             notif_id = replaces_id if replaces_id else self._generate_notification_id(app_name, summary, body)
 
             # Process urgency level
-            urgency = self._get_urgency(hints)
+            urgency = _get_urgency(hints)
 
             # Process actions
-            processed_actions = self._process_actions(actions)
+            processed_actions = _process_actions(actions)
 
             # Process hints
-            processed_hints = self._process_hints(hints)
+            processed_hints = _process_hints(hints)
 
             # Get icon and image
             icon, image = self._get_icon_and_image(app_name, app_icon, hints)
@@ -137,44 +178,7 @@ class NotificationHandler(dbus.service.Object):
     @dbus.service.method(dbus_interface='org.freedesktop.Notifications', out_signature='ssss')
     def GetServerInformation(self):
         """Get server information."""
-        return ("eww-notifier", "eww", "1.0", "1.2")
-
-    def _get_urgency(self, hints: Dict[str, Any]) -> str:
-        """Get the urgency level from hints."""
-        if hints and isinstance(hints, dict):
-            urgency = hints.get('urgency')
-            if urgency is not None:
-                return URGENCY_LEVELS.get(urgency, 'normal')
-        return 'normal'
-
-    def _process_actions(self, actions: List[str]) -> List[Dict[str, str]]:
-        """Process notification actions into a list of dictionaries."""
-        processed_actions = []
-        if actions and isinstance(actions, list):
-            for i in range(0, len(actions), 2):
-                if i + 1 < len(actions):
-                    processed_actions.append({
-                        'id': actions[i],
-                        'label': actions[i + 1]
-                    })
-        return processed_actions
-
-    def _process_hints(self, hints: Dict[str, Any]) -> Dict[str, Any]:
-        """Process notification hints into a clean dictionary."""
-        processed_hints = {}
-        if hints and isinstance(hints, dict):
-            for key, value in hints.items():
-                # Skip byte arrays and D-Bus variants
-                if isinstance(value, (dbus.Array, dbus.Byte, dbus.ByteArray)):
-                    continue
-                if isinstance(value, (str, int, float, bool)):
-                    processed_hints[key] = value
-                elif hasattr(value, 'unpack'):
-                    unpacked = value.unpack()
-                    # Skip byte arrays in unpacked values too
-                    if not isinstance(unpacked, (dbus.Array, dbus.Byte, dbus.ByteArray)):
-                        processed_hints[key] = unpacked
-        return processed_hints
+        return "eww-notifier", "eww", "1.0", "1.2"
 
     def _get_icon_and_image(self, app_name: str, app_icon: str, hints: Dict[str, Any]) -> Tuple[str, Optional[str]]:
         """Get both the app icon and any associated image (like album art)."""
