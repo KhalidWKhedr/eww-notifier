@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 import subprocess
 
-from Testing.config import NOTIFICATION_CACHE_FILE, MAX_NOTIFICATIONS, UPDATE_COOLDOWN
+from eww_notifier.config import NOTIFICATION_CACHE_FILE, MAX_NOTIFICATIONS, UPDATE_COOLDOWN
 
 logger = logging.getLogger(__name__)
 

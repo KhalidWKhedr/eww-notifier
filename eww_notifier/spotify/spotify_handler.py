@@ -7,7 +7,7 @@ import json
 import logging
 import requests
 from pathlib import Path
-from Testing.config import SPOTIFY_CACHE_DIR, SPOTIFY_ALBUM_ART_DIR, SPOTIFY_CACHE_MAX_SIZE, SPOTIFY_CACHE_MAX_AGE
+from eww_notifier.config import SPOTIFY_CACHE_DIR, SPOTIFY_ALBUM_ART_DIR, SPOTIFY_CACHE_MAX_SIZE, SPOTIFY_CACHE_MAX_AGE
 import time
 from typing import Dict, Any, Optional
 from urllib.parse import urlparse, unquote

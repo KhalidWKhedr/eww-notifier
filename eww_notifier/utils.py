@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 from gi.repository import Gio
-from Testing.icon_config import ICON_DIRS, ICON_SIZES, ICON_EXTENSIONS, APP_ICONS
+from eww_notifier.icon_config import ICON_DIRS, ICON_SIZES, ICON_EXTENSIONS, APP_ICONS
 
 logger = logging.getLogger(__name__)
 

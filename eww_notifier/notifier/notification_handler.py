@@ -16,10 +16,10 @@ import dbus.mainloop.glib
 from gi.repository import GLib
 from pydbus import SessionBus
 
-from Testing.config import APP_ICONS, URGENCY_LEVELS, DEFAULT_TIMEOUT
-from Testing.spotify.spotify_handler import SpotifyHandler
-from Testing.notification_queue.notification_queue import NotificationQueue
-from Testing.utils import find_icon_path
+from eww_notifier.config import APP_ICONS, URGENCY_LEVELS, DEFAULT_TIMEOUT
+from eww_notifier.spotify.spotify_handler import SpotifyHandler
+from eww_notifier.notification_queue.notification_queue import NotificationQueue
+from eww_notifier.utils import find_icon_path
 
 logger = logging.getLogger(__name__)
 
