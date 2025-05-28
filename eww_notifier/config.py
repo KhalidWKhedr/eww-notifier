@@ -5,7 +5,6 @@ Contains all constants and configuration settings.
 
 import os
 from pathlib import Path
-from .icon_config import ICON_DIRS, ICON_SIZES, ICON_EXTENSIONS, APP_ICONS
 
 # Base directories
 HOME = Path(os.path.expanduser("~"))

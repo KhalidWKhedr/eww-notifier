@@ -2,23 +2,22 @@
 Main notification handler module that processes and managing system notifications.
 """
 
-import logging
-import signal
-import sys
-import time
 import hashlib
+import logging
 import os
+import time
 from typing import Dict, Any, List, Optional, Tuple
-from pathlib import Path
+
 import dbus
-import dbus.service
 import dbus.mainloop.glib
+import dbus.service
 from gi.repository import GLib
 from pydbus import SessionBus
 
-from eww_notifier.config import APP_ICONS, URGENCY_LEVELS, DEFAULT_TIMEOUT
-from eww_notifier.spotify.spotify_handler import SpotifyHandler
+from eww_notifier.icon_config import APP_ICONS
+from eww_notifier.config import URGENCY_LEVELS, DEFAULT_TIMEOUT
 from eww_notifier.notification_queue.notification_queue import NotificationQueue
+from eww_notifier.spotify.spotify_handler import SpotifyHandler
 from eww_notifier.utils import find_icon_path
 
 logger = logging.getLogger(__name__)

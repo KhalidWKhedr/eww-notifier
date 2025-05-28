@@ -4,10 +4,9 @@ Notification queue module for managing notification storage and updates.
 
 import json
 import logging
+import subprocess
 import time
 from typing import Dict, Any, List, Optional
-from pathlib import Path
-import subprocess
 
 from eww_notifier.config import NOTIFICATION_CACHE_FILE, MAX_NOTIFICATIONS, UPDATE_COOLDOWN
 

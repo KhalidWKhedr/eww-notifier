@@ -2,17 +2,15 @@
 Spotify integration module for handling Spotify notifications and album art.
 """
 
-import os
 import json
 import logging
-import requests
-from pathlib import Path
-from eww_notifier.config import SPOTIFY_CACHE_DIR, SPOTIFY_ALBUM_ART_DIR, SPOTIFY_CACHE_MAX_SIZE, SPOTIFY_CACHE_MAX_AGE
 import time
+from pathlib import Path
 from typing import Dict, Any, Optional
-from urllib.parse import urlparse, unquote
-import hashlib
+
 from pydbus import SessionBus
+
+from eww_notifier.config import SPOTIFY_CACHE_DIR, SPOTIFY_ALBUM_ART_DIR, SPOTIFY_CACHE_MAX_SIZE, SPOTIFY_CACHE_MAX_AGE
 from .album_art_handler import AlbumArtHandler
 
 logger = logging.getLogger(__name__)
