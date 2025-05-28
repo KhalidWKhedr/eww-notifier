@@ -44,6 +44,15 @@ class NotificationHandler(dbus.service.Object):
         self.mainloop = GLib.MainLoop()
         logger.info("Notification handler initialized")
 
+    def start(self):
+        """Start the notification handler."""
+        try:
+            logger.info("Starting notification handler")
+            self.mainloop.run()
+        except Exception as e:
+            logger.error(f"Error in notification handler: {e}")
+            raise
+
     def _generate_notification_id(self, app_name: str, summary: str, body: str) -> int:
         """Generate a unique notification ID within valid D-Bus range."""
         if self.notification_id_counter >= 4294967295:  # Reset if we reach max

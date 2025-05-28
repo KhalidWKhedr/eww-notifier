@@ -6,53 +6,15 @@ Contains all icon-related constants and settings.
 import os
 from pathlib import Path
 
-# Base directories
-HOME = Path(os.path.expanduser("~"))
+from eww_notifier.config import HOME, SYSTEM_ICON_DIRS, USR_SHARE, USR_LOCAL
 
 # Icon search paths (in order of priority)
 ICON_DIRS = [
     str(HOME / ".local/share/icons"),
     str(HOME / ".icons"),
-    "/usr/share/icons/Papirus",
-    "/usr/share/icons/Papirus-Dark",
-    "/usr/share/icons/Adwaita",
-    "/usr/share/icons/Numix",
-    "/usr/share/icons/Numix-Circle",
-    "/usr/share/icons/Numix-Square",
-    "/usr/share/icons/Numix-Square-Light",
-    "/usr/share/icons/Numix-Square-Dark",
-    "/usr/share/icons/Arc",
-    "/usr/share/icons/Arc-Dark",
-    "/usr/share/icons/Mint-X",
-    "/usr/share/icons/Mint-Y",
-    "/usr/share/icons/Mint-Y-Dark",
-    "/usr/share/icons/Mint-Y-Aqua",
-    "/usr/share/icons/Mint-Y-Aqua-Dark",
-    "/usr/share/icons/Mint-Y-Blue",
-    "/usr/share/icons/Mint-Y-Blue-Dark",
-    "/usr/share/icons/Mint-Y-Brown",
-    "/usr/share/icons/Mint-Y-Brown-Dark",
-    "/usr/share/icons/Mint-Y-Grey",
-    "/usr/share/icons/Mint-Y-Grey-Dark",
-    "/usr/share/icons/Mint-Y-Orange",
-    "/usr/share/icons/Mint-Y-Orange-Dark",
-    "/usr/share/icons/Mint-Y-Pink",
-    "/usr/share/icons/Mint-Y-Pink-Dark",
-    "/usr/share/icons/Mint-Y-Purple",
-    "/usr/share/icons/Mint-Y-Purple-Dark",
-    "/usr/share/icons/Mint-Y-Red",
-    "/usr/share/icons/Mint-Y-Red-Dark",
-    "/usr/share/icons/Mint-Y-Sand",
-    "/usr/share/icons/Mint-Y-Sand-Dark",
-    "/usr/share/icons/Mint-Y-Teal",
-    "/usr/share/icons/Mint-Y-Teal-Dark",
-    "/usr/share/icons/Mint-Y-Yellow",
-    "/usr/share/icons/Mint-Y-Yellow-Dark",
-    "/usr/share/icons/hicolor",
-    "/usr/share/pixmaps",
-    "/usr/share/icons",
-    "/usr/share/applications",
-]
+    str(USR_SHARE / "icons"),
+    str(USR_LOCAL / "icons"),
+] + [str(path) for path in SYSTEM_ICON_DIRS]
 
 # Icon extensions and sizes
 ICON_EXTENSIONS = [".svg", ".png", ".xpm"]

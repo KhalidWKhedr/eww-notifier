@@ -7,21 +7,26 @@ import logging
 import subprocess
 import time
 from typing import Dict, Any, List, Optional
+from pathlib import Path
 
-from eww_notifier.config import NOTIFICATION_CACHE_FILE, MAX_NOTIFICATIONS, UPDATE_COOLDOWN
+from eww_notifier.config import (
+    NOTIFICATION_FILE,
+    NOTIFICATION_TEMP_FILE,
+    MAX_NOTIFICATIONS,
+    UPDATE_COOLDOWN,
+    DEFAULT_TIMEOUT
+)
 
 logger = logging.getLogger(__name__)
-
-# Maximum age of notifications in seconds (1 hour)
-MAX_NOTIFICATION_AGE = 3600
 
 class NotificationQueue:
     """Queue for managing notifications with persistence."""
 
     def __init__(self):
         """Initialize notification queue with cache file."""
-        self.cache_file = NOTIFICATION_CACHE_FILE
-        self.cache_file.parent.mkdir(parents=True, exist_ok=True)
+        self.cache_file = NOTIFICATION_FILE
+        self.temp_file = NOTIFICATION_TEMP_FILE
+        # No need to create directory since /tmp always exists
         self.last_update = 0
         self.notifications = []
         self._load_notifications()
@@ -30,20 +35,71 @@ class NotificationQueue:
     def _load_notifications(self) -> List[Dict[str, Any]]:
         """Load notifications from cache file."""
         try:
-            if self.cache_file.exists():
-                with open(self.cache_file, 'r') as f:
+            if not self.cache_file.exists():
+                logger.debug("No cache file exists, starting with empty notifications")
+                return []
+
+            with open(self.cache_file, 'r') as f:
+                try:
                     notifications = json.load(f)
+                    if not isinstance(notifications, list):
+                        logger.error("Invalid notification cache format: expected list")
+                        return []
+                    
+                    # Validate each notification has required fields
+                    valid_notifications = []
+                    current_time = time.time()
+                    for n in notifications:
+                        if not isinstance(n, dict):
+                            logger.warning(f"Skipping invalid notification: {n}")
+                            continue
+                        
+                        # Add missing fields
+                        if 'timestamp' not in n:
+                            n['timestamp'] = current_time
+                            logger.warning(f"Added missing timestamp to notification: {n}")
+                        if 'expire_timeout' not in n:
+                            n['expire_timeout'] = DEFAULT_TIMEOUT
+                            logger.warning(f"Added missing expire_timeout to notification: {n}")
+                        
+                        # Check if notification has expired
+                        if current_time - n['timestamp'] > n['expire_timeout'] / 1000:  # Convert ms to s
+                            logger.debug(f"Skipping expired notification: {n}")
+                            continue
+                            
+                        valid_notifications.append(n)
+
                     # Sort by timestamp, most recent first
-                    return sorted(notifications, key=lambda x: x.get('timestamp', 0), reverse=True)
+                    notifications = sorted(valid_notifications, key=lambda x: x.get('timestamp', 0), reverse=True)
+                    
+                    # Enforce MAX_NOTIFICATIONS limit
+                    if len(notifications) > MAX_NOTIFICATIONS:
+                        notifications = notifications[:MAX_NOTIFICATIONS]
+                        logger.info(f"Trimmed loaded notifications to {MAX_NOTIFICATIONS} entries")
+                    
+                    return notifications
+                except json.JSONDecodeError as e:
+                    logger.error(f"Invalid JSON in cache file: {e}")
+                    return []
         except Exception as e:
             logger.error(f"Error loading notifications: {e}")
-        return []
+            return []
 
     def _save_notifications(self) -> None:
         """Save notifications to cache file."""
         try:
-            with open(self.cache_file, 'w') as f:
+            # Ensure we don't exceed MAX_NOTIFICATIONS before saving
+            if len(self.notifications) > MAX_NOTIFICATIONS:
+                self.notifications = self.notifications[:MAX_NOTIFICATIONS]
+                logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries before saving")
+            
+            # Save to temporary file first
+            with open(self.temp_file, 'w') as f:
                 json.dump(self.notifications, f, indent=2)
+            
+            # Atomic rename to ensure file consistency
+            self.temp_file.replace(self.cache_file)
+            
             logger.debug(f"Saved {len(self.notifications)} notifications to cache")
         except Exception as e:
             logger.error(f"Error saving notifications: {e}")
@@ -52,10 +108,10 @@ class NotificationQueue:
         """Clean up old notifications and ensure we don't exceed MAX_NOTIFICATIONS."""
         current_time = time.time()
         
-        # Remove notifications older than MAX_NOTIFICATION_AGE
+        # Remove expired notifications
         self.notifications = [
             n for n in self.notifications 
-            if current_time - n.get('timestamp', 0) < MAX_NOTIFICATION_AGE
+            if current_time - n.get('timestamp', 0) <= n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000  # Convert ms to s
         ]
         
         # Trim to max size
@@ -63,6 +119,7 @@ class NotificationQueue:
             self.notifications = self.notifications[:MAX_NOTIFICATIONS]
             logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries")
         
+        # Save changes
         self._save_notifications()
 
     def add_notification(self, notification: Dict[str, Any]) -> None:
@@ -70,11 +127,20 @@ class NotificationQueue:
         # Add timestamp if not present
         if 'timestamp' not in notification:
             notification['timestamp'] = time.time()
+            
+        # Add expire_timeout if not present
+        if 'expire_timeout' not in notification:
+            notification['expire_timeout'] = DEFAULT_TIMEOUT
 
         # Add to beginning of list (most recent first)
         self.notifications.insert(0, notification)
 
-        # Clean up old notifications and trim to max size
+        # Ensure we don't exceed MAX_NOTIFICATIONS
+        if len(self.notifications) > MAX_NOTIFICATIONS:
+            self.notifications = self.notifications[:MAX_NOTIFICATIONS]
+            logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries after adding new notification")
+
+        # Clean up old notifications
         self._cleanup_old_notifications()
 
         # Update widget
@@ -83,7 +149,7 @@ class NotificationQueue:
     def remove_notification(self, notification_id: str) -> None:
         """Remove a notification from the queue."""
         initial_count = len(self.notifications)
-        self.notifications = [n for n in self.notifications if n.get('id') != notification_id]
+        self.notifications = [n for n in self.notifications if n.get('notification_id') != notification_id]
         if len(self.notifications) < initial_count:
             logger.info(f"Removed notification {notification_id}")
             self._save_notifications()
@@ -135,7 +201,7 @@ class NotificationQueue:
         """Get a specific notification by ID."""
         try:
             for notification in self.notifications:
-                if notification.get('id') == notification_id:
+                if notification.get('notification_id') == notification_id:
                     return notification
             return None
         except Exception as e:
@@ -146,7 +212,7 @@ class NotificationQueue:
         """Update a specific notification by ID with new data."""
         try:
             for i, notification in enumerate(self.notifications):
-                if notification.get('id') == notification_id:
+                if notification.get('notification_id') == notification_id:
                     self.notifications[i].update(updates)
                     self._save_notifications()
                     self.update_eww_widget()

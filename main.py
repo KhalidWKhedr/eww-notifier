@@ -2,16 +2,15 @@
 Main entry point for the notification system.
 """
 
-import sys
 import logging
 import signal
+import sys
 from pathlib import Path
 
 # Add the project root to Python path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+from eww_notifier.config import PROJECT_ROOT, LOG_FILE, NOTIFICATION_PERMISSION_TEST
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from eww_notifier.config import LOG_FILE
 from eww_notifier.notifier.notification_handler import NotificationHandler
 
 # Configure logging
@@ -32,45 +31,35 @@ def handle_signal(signum, _frame):
     sys.exit(0)
 
 def check_permissions():
-    """Check if we have necessary permissions to run."""
+    """Check if we have write permissions to required directories."""
     try:
-        # Check if we can write to cache directory
-        cache_dir = Path.home() / ".cache" / "eww"
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Test write permissions
-        test_file = cache_dir / ".permission_test"
+        # Test write permission to /tmp
+        test_file = NOTIFICATION_PERMISSION_TEST
         test_file.touch()
         test_file.unlink()
-        
         return True
     except (PermissionError, OSError) as e:
-        logger.error(f"Permission error: {e}")
+        logger.error(f"Permission check failed: {e}")
         return False
 
 def main():
     """Main entry point for the notification system."""
-    # Register signal handlers
+    # Check permissions first
+    if not check_permissions():
+        logger.error("Failed permission check, exiting")
+        sys.exit(1)
+
+    # Set up signal handlers
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
-    
-    # Check permissions
-    if not check_permissions():
-        logger.error("Insufficient permissions to run. Please check file permissions.")
-        sys.exit(1)
-    
+
     try:
-        logger.info("Starting notification system...")
+        # Initialize and start the notification handler
         handler = NotificationHandler()
-        logger.info("Notification system started. Waiting for notifications via D-Bus.")
-        handler.run()  # This will block and keep the program running
-    except KeyboardInterrupt:
-        logger.info("Received keyboard interrupt, shutting down...")
+        handler.start()
     except Exception as e:
-        logger.error(f"Error in main: {e}", exc_info=True)
+        logger.error(f"Error in main: {e}")
         sys.exit(1)
-    finally:
-        logger.info("Shutdown complete.")
 
 if __name__ == "__main__":
     main() 

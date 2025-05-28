@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from eww_notifier.config import DESKTOP_DIRS, DEFAULT_ICON
 from eww_notifier.icon_config import ICON_DIRS, ICON_SIZES, ICON_EXTENSIONS, APP_ICONS
 
 logger = logging.getLogger(__name__)
@@ -53,13 +54,7 @@ def get_desktop_icon(app_id: str) -> Optional[str]:
         Optional[str]: Path to the icon if found, None otherwise
     """
     try:
-        desktop_paths = [
-            Path.home() / ".local/share/applications",
-            Path("/usr/share/applications"),
-            Path("/usr/local/share/applications")
-        ]
-
-        for path in desktop_paths:
+        for path in DESKTOP_DIRS:
             desktop_file = path / f"{app_id}.desktop"
             if desktop_file.exists():
                 with open(desktop_file, 'r') as f:
@@ -124,8 +119,8 @@ def find_icon_path(icon_name: str, is_recursive: bool = False) -> str:
             logger.warning(f"Icon not found: {icon_name}, using default")
             return find_icon_path(APP_ICONS['default'], True)
 
-        return "/usr/share/icons/hicolor/scalable/apps/dialog-information.svg"
+        return str(DEFAULT_ICON)
 
     except Exception as e:
         logger.error(f"Error finding icon path for {icon_name}: {e}")
-        return "/usr/share/icons/hicolor/scalable/apps/dialog-information.svg" 
+        return str(DEFAULT_ICON) 

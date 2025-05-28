@@ -12,7 +12,7 @@ A custom DBus notification service for Linux desktops, designed to capture, stor
 ## Features
 
 - Implements `org.freedesktop.Notifications` DBus API.
-- Captures all system notifications and stores them in a JSON cache.
+- Captures all system notifications and stores them in a JSON file.
 - Automatic notification icon resolution from system themes, application `.desktop` files, or fallback search.
 - Special support for Spotify: fetches and caches album art for Spotify notifications.
 - Configurable number of notifications to keep.
@@ -60,13 +60,13 @@ A custom DBus notification service for Linux desktops, designed to capture, stor
 
 - `MAX_NOTIFS` (optional): Maximum number of notifications to store (default: 5).
 
-The service listens for notifications on DBus and writes them to `~/.cache/eww_notifications.json`. Spotify album art is cached in `~/.cache/spotify_album_arts/`.
+The service listens for notifications on DBus and writes them to `/tmp/eww_notifications.json`. Spotify album art is cached in `/tmp/eww_spotify/album_art/`.
 
 ---
 
 ## Integration with eww
 
-You can use eww's scripting and JSON widget capabilities to read and display notifications from `~/.cache/eww_notifications.json`.
+You can use eww's scripting and JSON widget capabilities to read and display notifications from `/tmp/eww_notifications.json`.
 
 ---
 
@@ -74,7 +74,7 @@ You can use eww's scripting and JSON widget capabilities to read and display not
 
 - **Icon Lookup:** Tries multiple methods and directories to resolve notification icons, providing nice visuals for notifications.
 - **Spotify Support:** Fetches album art for Spotify via MPRIS, caches it, and manages cache size/age automatically.
-- **Logging:** All events and errors are logged in `~/.cache/eww_notifier.log`.
+- **Logging:** All events and errors are logged in `/tmp/eww_notifier.log`.
 - **Code Organization:** Modular design with separate utility modules:
   - `notification_utils.py`: Core notification processing functions
   - `file_utils.py`: File and cache management utilities
@@ -89,6 +89,9 @@ You can use eww's scripting and JSON widget capabilities to read and display not
 - Ensure you have DBus and the required dependencies available.
 - The script must be running to capture notifications.
 - For Spotify album art, Spotify must be running and accessible over MPRIS.
+- Check file permissions in `/tmp` directory.
+- Verify the notification file exists: `cat /tmp/eww_notifications.json`
+- Check the logs: `tail -f /tmp/eww_notifier.log`
 
 ---
 

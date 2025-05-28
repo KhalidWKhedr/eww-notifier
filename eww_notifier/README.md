@@ -1,88 +1,88 @@
-# Eww Notification System
+# Eww Notifier
 
-A modern notification daemon for Eww widgets with enhanced features like Spotify integration and improved icon handling.
+A notification system for [Eww](https://github.com/elkowar/eww) that provides a modern, customizable notification experience.
 
 ## Features
 
-- **Modern Notification Handling**: Process and display system notifications with rich metadata
+- **Modern Design**: Clean, modern notification design with support for icons, actions, and rich text
 - **Spotify Integration**: Special handling for Spotify notifications with album art support
-- **Icon Management**: Robust icon finding system using Gio theme lookup and desktop files
-- **Notification Queue**: Efficient storage and retrieval of notifications
-- **Configurable**: Easy to customize through configuration files
+- **Customizable**: Easy to customize appearance and behavior through Eww widgets
+- **Persistent Storage**: Notifications are stored and can be accessed even after they expire
+- **D-Bus Integration**: Native integration with the system's D-Bus notification system
 
-## Project Structure
+## Installation
 
-```
-Testing/
-├── __init__.py          # Main package initialization
-├── config.py           # General configuration settings
-├── icon_config.py      # Icon-related configuration
-├── utils.py            # Utility functions
-├── main.py             # Main entry point
-├── notifier/           # Notification handling
-│   ├── __init__.py
-│   └── notification_handler.py
-├── notification_queue/ # Notification storage
-│   ├── __init__.py
-│   └── notification_queue.py
-└── spotify/           # Spotify integration
-    ├── __init__.py
-    ├── spotify_handler.py
-    └── album_art_handler.py
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/eww-notifier.git
+cd eww-notifier
 ```
 
-## Components
+2. Install the package:
+```bash
+pip install -e .
+```
 
-### Notification Handler
-The core component that processes incoming notifications and manages their lifecycle.
-
-### Spotify Integration
-Special handling for Spotify notifications, including:
-- Album art caching
-- MPRIS metadata support
-- Rich media controls
-
-### Icon Management
-Advanced icon finding system that:
-- Uses Gio theme lookup
-- Searches desktop files
-- Supports multiple icon themes
-- Handles fallbacks gracefully
-
-### Notification Queue
-Efficient storage system for notifications with:
-- JSON-based persistence
-- Size limits
-- Automatic cleanup
-- Priority handling
+3. Start the service:
+```bash
+python -m eww_notifier
+```
 
 ## Usage
 
-```python
-from eww_notifier import NotificationHandler, NotificationQueue, SpotifyHandler
+The service listens for notifications on DBus and writes them to `/tmp/eww_notifications.json`. Spotify album art is cached in `/tmp/eww_spotify/album_art/`.
 
-# Initialize components
-queue = NotificationQueue()
-spotify = SpotifyHandler()
-handler = NotificationHandler()
+### Eww Integration
 
-# Start handling notifications
-handler.start()
+You can use eww's scripting and JSON widget capabilities to read and display notifications from `/tmp/eww_notifications.json`.
+
+Example Eww widget:
+```yuck
+(defwidget notifications []
+  (box :orientation "v" :spacing 10
+    (for n in (eww-notifier-get-notifications)
+      (notification-card n))))
 ```
 
-## Configuration
+### Configuration
 
-Configuration is managed through several files:
-- `config.py`: General settings
-- `icon_config.py`: Icon-related settings
+The following environment variables can be used to configure the system:
 
-## Dependencies
+- `EWW_MAX_NOTIFICATIONS`: Maximum number of notifications to store (default: 50)
+- `EWW_DEFAULT_TIMEOUT`: Default notification timeout in milliseconds (default: 5000)
+- `EWW_UPDATE_COOLDOWN`: Minimum time between Eww widget updates in seconds (default: 0.1)
+- `EWW_LOG_LEVEL`: Logging level (default: INFO)
+- `EWW_SPOTIFY_CACHE_MAX_SIZE`: Maximum size of Spotify album art cache in bytes (default: 100MB)
+- `EWW_SPOTIFY_CACHE_MAX_AGE`: Maximum age of cached Spotify album art in seconds (default: 7 days)
 
-- Python 3.8+
-- PyGObject (for Gio support)
-- pydbus (for MPRIS support)
-- requests (for album art downloading)
+## Troubleshooting
+
+All events and errors are logged in `/tmp/eww_notifier.log`. You can check the logs using:
+```bash
+tail -f /tmp/eww_notifier.log
+```
+
+Common issues and solutions:
+
+1. **Notifications not appearing**:
+   - Check the logs: `tail -f /tmp/eww_notifier.log`
+   - Verify D-Bus is running: `systemctl --user status dbus`
+   - Check if the service is running: `ps aux | grep eww_notifier`
+
+2. **Spotify album art not showing**:
+   - Check if the cache directory exists: `ls -l /tmp/eww_spotify/album_art/`
+   - Verify the notification file exists: `cat /tmp/eww_notifications.json`
+   - Check file permissions: `ls -l /tmp/eww_notifications.json`
+
+3. **Permission issues**:
+   - Check file permissions: `ls -l /tmp/eww_notifications.json`
+   - Verify user has write access to `/tmp`
+   - Check if the service is running as the correct user
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License 
+This project is licensed under the MIT License - see the LICENSE file for details. 
