@@ -24,7 +24,7 @@ def process_actions(actions: List[str]) -> List[Dict[str, str]]:
         for i in range(0, len(actions), 2):
             if i + 1 < len(actions):
                 processed_actions.append({
-                    'id': actions[i],
+                    'notification_id': actions[i],
                     'label': actions[i + 1]
                 })
     return processed_actions

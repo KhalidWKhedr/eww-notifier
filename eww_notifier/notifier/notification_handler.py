@@ -90,7 +90,7 @@ class NotificationHandler(dbus.service.Object):
             icon, image = self._get_icon_and_image(app_name, app_icon, hints)
 
             notification = {
-                'id': str(notif_id),
+                'notification_id': str(notif_id),
                 'app': app_name,
                 'summary': summary,
                 'body': body,
@@ -114,10 +114,10 @@ class NotificationHandler(dbus.service.Object):
             return dbus.UInt32(0)
 
     @dbus.service.method(dbus_interface='org.freedesktop.Notifications', in_signature='u')
-    def CloseNotification(self, id):
+    def CloseNotification(self, notification_id):
         """Close a notification."""
         try:
-            notification_id = str(id)
+            notification_id = str(notification_id)
             self.remove_notification(notification_id)
             logger.info(f"Closed notification {notification_id}")
         except Exception as e:
@@ -207,7 +207,7 @@ class NotificationHandler(dbus.service.Object):
                 logger.info(f"Added image URL to notification: {album_art_url}")
 
                 # Get album art path
-                album_art_path = self.spotify_handler.get_album_art_path(notification['id'], album_art_url)
+                album_art_path = self.spotify_handler.get_album_art_path(notification['notification_id'], album_art_url)
                 if album_art_path and os.path.exists(album_art_path):
                     # Update notification with album art path
                     notification['image'] = album_art_path
@@ -221,7 +221,7 @@ class NotificationHandler(dbus.service.Object):
                 'album_art_url': album_art_url,
                 'album_art_path': notification['image']
             }
-            self.spotify_handler.update_metadata(notification['id'], metadata)
+            self.spotify_handler.update_metadata(notification['notification_id'], metadata)
 
         except Exception as e:
             logger.error(f"Error handling Spotify notification: {e}")
