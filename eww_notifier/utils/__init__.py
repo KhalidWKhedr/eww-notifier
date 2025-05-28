@@ -2,13 +2,10 @@
 Utility functions package.
 """
 
-import os
 import logging
-from pathlib import Path
-from typing import Optional
-from eww_notifier.icon_config import ICON_DIRS, ICON_SIZES, ICON_EXTENSIONS, APP_ICONS
-from eww_notifier.utils.icon_utils import get_theme_icon, get_desktop_icon, find_icon_path
+
 from eww_notifier.utils.file_utils import get_file_size_mb
+from eww_notifier.utils.icon_utils import get_theme_icon, get_desktop_icon, find_icon_path
 
 logger = logging.getLogger(__name__)
 
