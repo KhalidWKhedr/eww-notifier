@@ -59,12 +59,12 @@ Efficient storage system for notifications with:
 ## Usage
 
 ```python
-from Testing import NotificationHandler, NotificationQueue, SpotifyHandler
+from eww_notifier import NotificationHandler, NotificationQueue, SpotifyHandler
 
 # Initialize components
 queue = NotificationQueue()
 spotify = SpotifyHandler()
-handler = NotificationHandler(queue, spotify)
+handler = NotificationHandler()
 
 # Start handling notifications
 handler.start()

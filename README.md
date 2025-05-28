@@ -19,6 +19,9 @@ A custom DBus notification service for Linux desktops, designed to capture, stor
 - Efficient album art caching with size and age limits, automatic cleanup, and metadata tracking.
 - Logging to both file and console for easy debugging.
 - Designed to integrate out-of-the-box with eww widgets.
+- Modular code organization with separate utility modules for better maintainability.
+- Robust error handling and graceful shutdown support.
+- Clean separation of concerns with dedicated utility modules for file operations, icon handling, and notification processing.
 
 ---
 
@@ -72,6 +75,12 @@ You can use eww's scripting and JSON widget capabilities to read and display not
 - **Icon Lookup:** Tries multiple methods and directories to resolve notification icons, providing nice visuals for notifications.
 - **Spotify Support:** Fetches album art for Spotify via MPRIS, caches it, and manages cache size/age automatically.
 - **Logging:** All events and errors are logged in `~/.cache/eww_notifier.log`.
+- **Code Organization:** Modular design with separate utility modules:
+  - `notification_utils.py`: Core notification processing functions
+  - `file_utils.py`: File and cache management utilities
+  - `icon_utils.py`: Icon resolution and management
+- **Error Handling:** Comprehensive error handling with graceful shutdown support and detailed logging.
+- **Signal Handling:** Proper handling of system signals (SIGINT, SIGTERM) for clean shutdown.
 
 ---
 
@@ -99,3 +108,25 @@ _This project currently does not specify a license. Consider adding one!_
 
 - Inspired by the needs of eww/Wayland users.
 - Uses Python, pydbus, PyGObject, and requests.
+
+## Project Structure
+
+```
+eww-notifier/
+├── eww_notifier/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── notifier/
+│   │   ├── __init__.py
+│   │   ├── notification_handler.py
+│   │   └── spotify_handler.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── notification_utils.py
+│       ├── file_utils.py
+│       └── icon_utils.py
+├── main.py
+├── setup.py
+├── requirements.txt
+└── README.md
+```
