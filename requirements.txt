@@ -1,0 +1,7 @@
+pydbus==0.6.0
+Requests==2.32.3
+setuptools==75.5.0
+
+# pacman-installed (Arch system packages)
+# python-dbus
+# python-gobject
