@@ -5,7 +5,6 @@ Main entry point for the notification system.
 import sys
 import signal
 import logging
-from pathlib import Path
 
 from eww_notifier.config import NOTIFICATION_PERMISSION_TEST
 from eww_notifier.notifier.notification_handler import NotificationHandler

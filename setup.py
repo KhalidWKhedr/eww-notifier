@@ -33,7 +33,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "eww-notifier=eww_notifier.main:main",
+            "eww-notifier=eww_notifier.__main__:main",
         ],
     },
 ) 
