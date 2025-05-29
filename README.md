@@ -51,6 +51,7 @@ eww-notifier/
 │       └── error_handler.py
 ├── setup.py                # Package setup
 ├── requirements.txt        # Dependencies
+├── start-eww-notifier.sh   # Startup script for Hyprland
 └── README.md              # This file
 ```
 
@@ -102,8 +103,25 @@ eww-notifier/
 
 5. **Start the service**:
    ```sh
+   # Manual start
    python -m eww_notifier
+
+   # Or use the startup script
+   ./start-eww-notifier.sh
    ```
+
+### Hyprland Integration
+
+To start the service automatically with Hyprland, add this line to your Hyprland config (`~/.config/hypr/hyprland.conf`):
+
+```bash
+exec-once = /path/to/eww-notifier/start-eww-notifier.sh
+```
+
+The startup script:
+- Kills any existing instances
+- Starts the service in the background
+- Ensures clean startup on Hyprland launch
 
 ---
 
