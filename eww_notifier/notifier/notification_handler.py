@@ -33,11 +33,11 @@ class NotificationHandler:
             NotificationError: If initialization fails
         """
         try:
-            # Initialize components
-            self.notification_queue = NotificationQueue()
+            # Initialize components from DI container
+            self.notification_queue = container.notification_queue()
             self.spotify_handler = SpotifyHandler(container)
             self.processor = NotificationProcessor(container, self.spotify_handler)
-            self.dbus_service = DBusService(self)
+            self.dbus_service = container.dbus_service(self)
             self.logger = container.logging_service()
             logger.info("Notification handler initialized")
         except Exception as e:
