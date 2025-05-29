@@ -5,10 +5,9 @@ Notification queue module for managing notification storage and updates.
 import json
 import logging
 import subprocess
-import time
 import threading
+import time
 from typing import Dict, Any, List, Optional
-from pathlib import Path
 
 from eww_notifier.config import (
     NOTIFICATION_FILE,
@@ -18,7 +17,7 @@ from eww_notifier.config import (
     DEFAULT_TIMEOUT,
     EWW_WIDGET_VAR
 )
-from eww_notifier.utils.error_handler import handle_error, NotificationError, CacheError
+from eww_notifier.utils.error_handler import handle_error
 
 logger = logging.getLogger(__name__)
 

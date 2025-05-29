@@ -8,11 +8,12 @@ This module provides utility functions for:
 """
 
 import logging
+from typing import Dict, Any, List
+
 import dbus
-from typing import Dict, Any, List, Union
 
 from eww_notifier.config import URGENCY_LEVELS
-from eww_notifier.utils.error_handler import handle_error, NotificationError
+from eww_notifier.utils.error_handler import handle_error
 
 logger = logging.getLogger(__name__)
 

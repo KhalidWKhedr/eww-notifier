@@ -4,8 +4,8 @@ Error handling utilities for the notification system.
 
 import logging
 import sys
-from typing import Optional, Type, Callable
 import time
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 

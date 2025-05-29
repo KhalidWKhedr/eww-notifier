@@ -4,7 +4,6 @@ Logging configuration for the notification system.
 
 import logging
 import sys
-from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
 from eww_notifier.config import LOG_FILE, LOG_LEVEL

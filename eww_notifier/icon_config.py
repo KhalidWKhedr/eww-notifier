@@ -3,9 +3,6 @@ Icon configuration module for the notification system.
 Contains all icon-related constants and settings.
 """
 
-import os
-from pathlib import Path
-
 from eww_notifier.config import HOME, SYSTEM_ICON_DIRS, USR_SHARE, USR_LOCAL
 
 # Icon search paths (in order of priority)

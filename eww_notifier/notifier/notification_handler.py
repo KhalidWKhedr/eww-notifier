@@ -8,10 +8,10 @@ from typing import Dict, Any, List, Optional
 import dbus
 
 from eww_notifier.notification_queue.notification_queue import NotificationQueue
-from eww_notifier.spotify.spotify_handler import SpotifyHandler
 from eww_notifier.notifier.dbus_service import DBusService
 from eww_notifier.notifier.notification_processor import NotificationProcessor
-from eww_notifier.utils.error_handler import handle_error, NotificationError
+from eww_notifier.spotify.spotify_handler import SpotifyHandler
+from eww_notifier.utils.error_handler import handle_error
 
 logger = logging.getLogger(__name__)
 

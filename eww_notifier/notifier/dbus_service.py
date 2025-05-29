@@ -10,13 +10,14 @@ This module provides:
 import logging
 import signal
 import sys
+from typing import List, Dict, Any
+
 import dbus
 import dbus.mainloop.glib
 import dbus.service
 from gi.repository import GLib
-from typing import List, Dict, Any, Optional
 
-from eww_notifier.utils.error_handler import handle_error, DBusError
+from eww_notifier.utils.error_handler import handle_error
 
 logger = logging.getLogger(__name__)
 
@@ -218,4 +219,4 @@ class DBusService(dbus.service.Object):
             return info
         except Exception as e:
             handle_error(e, "server information retrieval", exit_on_error=False)
-            return ("unknown", "unknown", "0.0", "0.0") 
+            return "unknown", "unknown", "0.0", "0.0"

@@ -11,14 +11,14 @@ This module provides functionality for:
 import hashlib
 import logging
 import time
-from typing import Dict, Any, Optional, Tuple, List, Union
+from typing import Dict, Any, Optional, Tuple, List
 
 import dbus
 
 from eww_notifier.config import DEFAULT_TIMEOUT
+from eww_notifier.icon_config import APP_ICONS
 from eww_notifier.notifier.notification_utils import get_urgency, process_actions, process_hints
 from eww_notifier.utils import find_icon_path
-from eww_notifier.icon_config import APP_ICONS
 from eww_notifier.utils.error_handler import handle_error, NotificationError
 
 logger = logging.getLogger(__name__)
