@@ -5,6 +5,7 @@ Main entry point for the notification system.
 import logging
 import signal
 import sys
+import json
 from pathlib import Path
 
 # Add the project root to Python path
@@ -12,6 +13,7 @@ from eww_notifier.config import PROJECT_ROOT, LOG_FILE, NOTIFICATION_PERMISSION_
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from eww_notifier.notifier.notification_handler import NotificationHandler
+from eww_notifier.notification_queue.notification_queue import NotificationQueue
 
 # Configure logging
 logging.basicConfig(
@@ -42,8 +44,18 @@ def check_permissions():
         logger.error(f"Permission check failed: {e}")
         return False
 
+def output_notifications():
+    """Output current notifications for deflisten."""
+    queue = NotificationQueue()
+    print(json.dumps(queue.get_notifications()))
+
 def main():
     """Main entry point for the notification system."""
+    # Check if we're being called by deflisten
+    if len(sys.argv) > 1 and sys.argv[1] == "--output":
+        output_notifications()
+        return
+
     # Check permissions first
     if not check_permissions():
         logger.error("Failed permission check, exiting")

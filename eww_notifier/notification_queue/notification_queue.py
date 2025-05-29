@@ -6,6 +6,7 @@ import json
 import logging
 import subprocess
 import time
+import threading
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
@@ -14,7 +15,8 @@ from eww_notifier.config import (
     NOTIFICATION_TEMP_FILE,
     MAX_NOTIFICATIONS,
     UPDATE_COOLDOWN,
-    DEFAULT_TIMEOUT
+    DEFAULT_TIMEOUT,
+    EWW_WIDGET_VAR
 )
 
 logger = logging.getLogger(__name__)
@@ -31,6 +33,18 @@ class NotificationQueue:
         self.notifications = []
         self._load_notifications()
         self._cleanup_old_notifications()
+        
+        # Start periodic cleanup
+        self.cleanup_thread = threading.Thread(target=self._periodic_cleanup, daemon=True)
+        self.cleanup_thread.start()
+
+    def _periodic_cleanup(self):
+        """Periodically clean up expired notifications."""
+        while True:
+            time.sleep(1)  # Check every second
+            self._cleanup_old_notifications()
+            if self.notifications:  # Only update widget if there are notifications
+                self.update_eww_widget()
 
     def _load_notifications(self) -> List[Dict[str, Any]]:
         """Load notifications from cache file."""
@@ -177,7 +191,14 @@ class NotificationQueue:
         return False
 
     def update_eww_widget(self) -> None:
-        """Update the Eww widget with current notifications."""
+        """Update the Eww widget with current notifications.
+        
+        This method updates the Eww widget variable with the current notifications.
+        It includes error handling for:
+        - Eww not running
+        - Invalid JSON
+        - Command execution failures
+        """
         # Only update if enough time has passed since the last update
         if not self.should_update():
             return
@@ -187,36 +208,45 @@ class NotificationQueue:
             notifications_json = json.dumps(self.notifications)
 
             # Update Eww widget variable
-            subprocess.run(
-                ['eww', 'update', f'notifications={notifications_json}'],
+            result = subprocess.run(
+                ['eww', 'update', f'{EWW_WIDGET_VAR}={notifications_json}'],
                 check=True,
                 capture_output=True,
                 text=True
             )
             logger.debug("Updated Eww notifications widget")
-        except Exception as e:
+        except subprocess.CalledProcessError as e:
             logger.error(f"Error updating Eww widget: {e}")
+            if e.stderr:
+                logger.error(f"Eww error output: {e.stderr}")
+        except Exception as e:
+            logger.error(f"Unexpected error updating Eww widget: {e}")
 
     def get_notification(self, notification_id: str) -> Optional[Dict[str, Any]]:
-        """Get a specific notification by ID."""
-        try:
-            for notification in self.notifications:
-                if notification.get('notification_id') == notification_id:
-                    return notification
-            return None
-        except Exception as e:
-            logger.error(f"Error getting notification {notification_id}: {e}")
-            return None
+        """Get a specific notification by ID.
+        
+        Args:
+            notification_id: The ID of the notification to retrieve
+            
+        Returns:
+            The notification dictionary if found, None otherwise
+        """
+        for notification in self.notifications:
+            if notification.get('notification_id') == notification_id:
+                return notification
+        return None
 
     def update_notification(self, notification_id: str, updates: Dict[str, Any]) -> None:
-        """Update a specific notification by ID with new data."""
-        try:
-            for i, notification in enumerate(self.notifications):
-                if notification.get('notification_id') == notification_id:
-                    self.notifications[i].update(updates)
-                    self._save_notifications()
-                    self.update_eww_widget()
-                    logger.info(f"Updated notification {notification_id}")
-                    return
-        except Exception as e:
-            logger.error(f"Error updating notification {notification_id}: {e}") 
+        """Update a specific notification with new data.
+        
+        Args:
+            notification_id: The ID of the notification to update
+            updates: Dictionary of fields to update
+        """
+        for notification in self.notifications:
+            if notification.get('notification_id') == notification_id:
+                notification.update(updates)
+                self._save_notifications()
+                self.update_eww_widget()
+                return
+        logger.warning(f"Notification {notification_id} not found for update") 

@@ -22,6 +22,9 @@ TMP_DIR = Path('/tmp')
 USR_SHARE = Path('/usr/share')
 USR_LOCAL = Path('/usr/local/share')
 
+# Eww widget settings
+EWW_WIDGET_VAR = "notifications"  # Name of the Eww variable to update
+
 # System paths
 SYSTEM_ICON_DIRS = [
     USR_SHARE / "icons/Papirus",
