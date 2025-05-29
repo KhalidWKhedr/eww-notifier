@@ -2,72 +2,40 @@
 Main notification handler module that processes and managing system notifications.
 """
 
-import hashlib
 import logging
-import os
-import time
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List
 
 import dbus
-import dbus.mainloop.glib
-import dbus.service
-from gi.repository import GLib
-from pydbus import SessionBus
 
-from eww_notifier.icon_config import APP_ICONS
-from eww_notifier.config import DEFAULT_TIMEOUT
 from eww_notifier.notification_queue.notification_queue import NotificationQueue
 from eww_notifier.spotify.spotify_handler import SpotifyHandler
-from eww_notifier.utils import find_icon_path
-from eww_notifier.notifier.notification_utils import get_urgency, process_actions, process_hints
+from eww_notifier.notifier.dbus_service import DBusService
+from eww_notifier.notifier.notification_processor import NotificationProcessor
 
 logger = logging.getLogger(__name__)
 
-
-class NotificationHandler(dbus.service.Object):
+class NotificationHandler:
     """Notification handler for processing and managing system notifications."""
 
     def __init__(self):
-        """Initialize notification handler with D-Bus service."""
-        # Initialize D-Bus
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-        bus = dbus.SessionBus()
-        bus_name = dbus.service.BusName('org.freedesktop.Notifications', bus=bus)
-        dbus.service.Object.__init__(self, bus_name, '/org/freedesktop/Notifications')
-
+        """Initialize notification handler."""
         # Initialize components
         self.notification_queue = NotificationQueue()
         self.spotify_handler = SpotifyHandler()
-        self.notification_id_counter = 1
-
-        # Set up main loop
-        self.mainloop = GLib.MainLoop()
+        self.processor = NotificationProcessor(self.spotify_handler)
+        self.dbus_service = DBusService(self)
         logger.info("Notification handler initialized")
 
     def start(self):
         """Start the notification handler."""
         try:
             logger.info("Starting notification handler")
-            self.mainloop.run()
+            self.dbus_service.start()
         except Exception as e:
             logger.error(f"Error in notification handler: {e}")
             raise
 
-    def _generate_notification_id(self, app_name: str, summary: str, body: str) -> int:
-        """Generate a unique notification ID within valid D-Bus range."""
-        if self.notification_id_counter >= 4294967295:  # Reset if we reach max
-            self.notification_id_counter = 1
-
-        # Use a combination of counter and hash for uniqueness
-        unique_str = f"{app_name}{summary}{body}{self.notification_id_counter}"
-        hash_obj = hashlib.md5(unique_str.encode())
-        # Take first 4 bytes of hash and convert to integer
-        notification_id = int.from_bytes(hash_obj.digest()[:4], byteorder='big')
-        self.notification_id_counter += 1
-        return notification_id
-
-    @dbus.service.method(dbus_interface='org.freedesktop.Notifications', in_signature='susssasa{sv}i', out_signature='u')
-    def Notify(self, app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout):
+    def handle_notification(self, app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout):
         """Handle incoming notification."""
         try:
             # Log all hints for debugging
@@ -83,47 +51,19 @@ class NotificationHandler(dbus.service.Object):
                         if isinstance(value, (str, int, float, bool)):
                             logger.info(f"Hint '{key}': {value} (type: {type(value)})")
 
-            # Generate a unique ID for this notification
-            notif_id = replaces_id if replaces_id else self._generate_notification_id(app_name, summary, body)
+            # Process notification data
+            notification = self.processor.process_notification_data(
+                app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout
+            )
 
-            # Process urgency level
-            urgency = get_urgency(hints)
-
-            # Process actions
-            processed_actions = process_actions(actions)
-
-            # Process hints
-            processed_hints = process_hints(hints)
-
-            # Get icon and image
-            icon, image = self._get_icon_and_image(app_name, app_icon, hints)
-
-            notification = {
-                'notification_id': str(notif_id),
-                'app': app_name,
-                'summary': summary,
-                'body': body,
-                'icon': icon,  # App icon (24x24)
-                'image': image,  # Full-size image (like album art)
-                'urgency': urgency,
-                'actions': processed_actions,
-                'hints': processed_hints,
-                'timestamp': time.time(),
-                'expire_timeout': expire_timeout if expire_timeout > 0 else DEFAULT_TIMEOUT
-            }
-
-            # Handle Spotify notifications specially
-            if app_name.lower() == 'spotify':
-                self._handle_spotify_notification(notification, hints)
-
+            # Add to queue
             self.process_notification(notification)
-            return dbus.UInt32(notif_id)
+            return dbus.UInt32(int(notification['notification_id']))
         except Exception as e:
             logger.error(f"Error processing notification: {e}")
             return dbus.UInt32(0)
 
-    @dbus.service.method(dbus_interface='org.freedesktop.Notifications', in_signature='u')
-    def CloseNotification(self, notification_id):
+    def close_notification(self, notification_id):
         """Close a notification."""
         try:
             notification_id = str(notification_id)
@@ -131,109 +71,6 @@ class NotificationHandler(dbus.service.Object):
             logger.info(f"Closed notification {notification_id}")
         except Exception as e:
             logger.error(f"Error closing notification: {e}")
-
-    @dbus.service.method(dbus_interface='org.freedesktop.Notifications', out_signature='as')
-    def GetCapabilities(self):
-        """Get notification capabilities."""
-        return [
-            "body",
-            "icon-static",
-            "actions",
-            "urgency",
-            "hints",
-            "action-icons",
-            "persistence"
-        ]
-
-    @dbus.service.method(dbus_interface='org.freedesktop.Notifications', out_signature='ssss')
-    def GetServerInformation(self):
-        """Get server information."""
-        return "eww-notifier", "eww", "1.0", "1.2"
-
-    def _get_icon_and_image(self, app_name: str, app_icon: str, hints: Dict[str, Any]) -> Tuple[str, Optional[str]]:
-        """Get both the app icon and any associated image (like album art)."""
-        try:
-            # Default values
-            icon = find_icon_path(app_icon or app_name.lower())
-            image = None
-
-            # Handle Spotify album art
-            if app_name.lower() == 'spotify':
-                # Try MPRIS first
-                try:
-                    bus = SessionBus()
-                    spotify = bus.get("org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2")
-                    metadata = spotify.Metadata
-                    url = metadata.get("mpris:artUrl", "")
-                    if url.startswith("https://"):
-                        logger.info(f"Got album art URL from MPRIS: {url}")
-                        album_art_path = self.spotify_handler.get_album_art_path("mpris")
-                        if album_art_path and os.path.exists(album_art_path):
-                            logger.info(f"Using album art from MPRIS: {album_art_path}")
-                            image = album_art_path
-                except Exception as e:
-                    logger.warning(f"Failed to get album art from MPRIS: {e}")
-
-                # Fallback to notification hints if MPRIS fails
-                if not image and hints:
-                    # Try to get album art from hints
-                    for key, value in hints.items():
-                        if isinstance(value, str) and value.startswith('https://'):
-                            album_art_path = self.spotify_handler.get_album_art_path(value)
-                            if album_art_path and os.path.exists(album_art_path):
-                                logger.info(f"Using album art from hints: {album_art_path}")
-                                image = album_art_path
-                                break
-
-            return icon, image
-
-        except Exception as e:
-            logger.error(f"Error getting icon and image: {e}")
-            return find_icon_path(APP_ICONS['default']), None
-
-    def _handle_spotify_notification(self, notification: Dict[str, Any], hints: Dict[str, Any]) -> None:
-        """Handle Spotify-specific notification features."""
-        try:
-            # Extract album art URL from hints
-            album_art_url = None
-            if hints and isinstance(hints, dict):
-                # Skip byte arrays and only process string values
-                for key, value in hints.items():
-                    if isinstance(value, (dbus.Array, dbus.Byte, dbus.ByteArray)):
-                        continue
-                    if key == 'image-path' and isinstance(value, str):
-                        album_art_url = value
-                        logger.debug(f"Found album art URL in image-path: {album_art_url}")
-                        break
-                    elif key in ['image_url', 'image'] and isinstance(value, str):
-                        album_art_url = value
-                        logger.debug(f"Found album art URL in hint '{key}': {album_art_url}")
-                        break
-
-            if album_art_url:
-                # Add image URL to notification
-                notification['image'] = album_art_url
-                logger.info(f"Added image URL to notification: {album_art_url}")
-
-                # Get album art path
-                album_art_path = self.spotify_handler.get_album_art_path(album_art_url)
-                if album_art_path and os.path.exists(album_art_path):
-                    # Update notification with album art path
-                    notification['image'] = album_art_path
-                    logger.info(f"Updated Spotify notification with album art: {album_art_path}")
-                else:
-                    logger.warning(f"Failed to get album art path for URL: {album_art_url}")
-
-            # Update metadata
-            metadata = {
-                'track_id': hints.get('track-id', 'unknown') if isinstance(hints.get('track-id'), str) else 'unknown',
-                'album_art_url': album_art_url,
-                'album_art_path': notification['image']
-            }
-            self.spotify_handler.update_metadata(notification['notification_id'], metadata)
-
-        except Exception as e:
-            logger.error(f"Error handling Spotify notification: {e}")
 
     def process_notification(self, notification: Dict[str, Any]) -> None:
         """Process a notification dictionary and add it to the queue."""
@@ -248,27 +85,13 @@ class NotificationHandler(dbus.service.Object):
         self.notification_queue.remove_notification(notification_id)
 
     def clear_notifications(self) -> None:
-        """Clear all notifications."""
-        self.notification_queue.clear_notifications()
+        """Clear all notifications from the queue."""
+        self.notification_queue.clear()
 
     def get_notifications(self) -> List[Dict[str, Any]]:
-        """Get all notifications."""
+        """Get all notifications from the queue."""
         return self.notification_queue.get_notifications()
 
     def get_notification(self, notification_id: str) -> Dict[str, Any]:
-        """Get a specific notification."""
-        return self.notification_queue.get_notification(notification_id)
-
-    def run(self):
-        """Run the notification handler."""
-        try:
-            logger.info("Starting notification handler main loop")
-            self.mainloop.run()
-        except KeyboardInterrupt:
-            logger.info("Received keyboard interrupt, shutting down...")
-            self.mainloop.quit()
-        except Exception as e:
-            logger.error(f"Error in notification handler: {e}")
-            self.mainloop.quit()
-        finally:
-            logger.info("Stopping notification handler") 
+        """Get a specific notification from the queue."""
+        return self.notification_queue.get_notification(notification_id) 
