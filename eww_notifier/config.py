@@ -122,5 +122,31 @@ def create_directories():
     except (PermissionError, OSError) as e:
         raise RuntimeError(f"Failed to create cache directories: {e}")
 
+class Config:
+    def __init__(self):
+        self.PROJECT_ROOT = PROJECT_ROOT
+        self.HOME = HOME
+        self.TMP_DIR = TMP_DIR
+        self.USR_SHARE = USR_SHARE
+        self.USR_LOCAL = USR_LOCAL
+        self.EWW_WIDGET_VAR = EWW_WIDGET_VAR
+        self.SYSTEM_ICON_DIRS = SYSTEM_ICON_DIRS
+        self.DESKTOP_DIRS = DESKTOP_DIRS
+        self.DEFAULT_ICON = DEFAULT_ICON
+        self.SPOTIFY_CACHE_DIR = SPOTIFY_CACHE_DIR
+        self.SPOTIFY_ALBUM_ART_DIR = SPOTIFY_ALBUM_ART_DIR
+        self.NOTIFICATION_FILE = NOTIFICATION_FILE
+        self.NOTIFICATION_FILE_STR = NOTIFICATION_FILE_STR
+        self.NOTIFICATION_TEMP_FILE = NOTIFICATION_TEMP_FILE
+        self.NOTIFICATION_PERMISSION_TEST = NOTIFICATION_PERMISSION_TEST
+        self.LOG_FILE = LOG_FILE
+        self.MAX_NOTIFICATIONS = MAX_NOTIFICATIONS
+        self.URGENCY_LEVELS = URGENCY_LEVELS
+        self.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT
+        self.SPOTIFY_CACHE_MAX_SIZE = SPOTIFY_CACHE_MAX_SIZE
+        self.SPOTIFY_CACHE_MAX_AGE = SPOTIFY_CACHE_MAX_AGE
+        self.UPDATE_COOLDOWN = UPDATE_COOLDOWN
+        self.LOG_LEVEL = LOG_LEVEL
+
 # Create the necessary directories
 create_directories() 

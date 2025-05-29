@@ -39,6 +39,7 @@ class NotificationHandler:
             self.processor = NotificationProcessor(container, self.spotify_handler)
             self.dbus_service = container.dbus_service(self)
             self.logger = container.logging_service()
+            self.app_config = container.app_config()
             logger.info("Notification handler initialized")
         except Exception as e:
             handle_error(e, "notification handler initialization", exit_on_error=True)
