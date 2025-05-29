@@ -123,18 +123,30 @@ class NotificationQueue:
         current_time = time.time()
         
         # Remove expired notifications
+        initial_count = len(self.notifications)
         self.notifications = [
             n for n in self.notifications 
             if current_time - n.get('timestamp', 0) <= n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000  # Convert ms to s
         ]
         
+        if len(self.notifications) < initial_count:
+            logger.info(f"Removed {initial_count - len(self.notifications)} expired notifications")
+            for n in self.notifications:
+                time_passed = current_time - n.get('timestamp', 0)
+                timeout = n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000
+                logger.debug(f"Notification {n.get('notification_id')}: {time_passed:.1f}s passed, {timeout:.1f}s timeout")
+            
+            # Always update widget when notifications change
+            self._save_notifications()
+            self.update_eww_widget()
+            return
+        
         # Trim to max size
         if len(self.notifications) > MAX_NOTIFICATIONS:
             self.notifications = self.notifications[:MAX_NOTIFICATIONS]
             logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries")
-        
-        # Save changes
-        self._save_notifications()
+            self._save_notifications()
+            self.update_eww_widget()
 
     def add_notification(self, notification: Dict[str, Any]) -> None:
         """Add a new notification to the queue."""
