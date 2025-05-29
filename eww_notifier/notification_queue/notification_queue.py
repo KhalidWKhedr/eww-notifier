@@ -18,36 +18,62 @@ from eww_notifier.config import (
     DEFAULT_TIMEOUT,
     EWW_WIDGET_VAR
 )
+from eww_notifier.utils.error_handler import handle_error, NotificationError, CacheError
 
 logger = logging.getLogger(__name__)
 
 class NotificationQueue:
-    """Queue for managing notifications with persistence."""
+    """Queue for managing notifications with persistence.
+    
+    This class handles:
+    - Notification storage and retrieval
+    - Cache file management
+    - Periodic cleanup of expired notifications
+    - Eww widget updates
+    """
 
     def __init__(self):
-        """Initialize notification queue with cache file."""
-        self.cache_file = NOTIFICATION_FILE
-        self.temp_file = NOTIFICATION_TEMP_FILE
-        # No need to create directory since /tmp always exists
-        self.last_update = 0
-        self.notifications = []
-        self._load_notifications()
-        self._cleanup_old_notifications()
+        """Initialize notification queue with cache file.
         
-        # Start periodic cleanup
-        self.cleanup_thread = threading.Thread(target=self._periodic_cleanup, daemon=True)
-        self.cleanup_thread.start()
+        Raises:
+            CacheError: If cache initialization fails
+        """
+        try:
+            self.cache_file = NOTIFICATION_FILE
+            self.temp_file = NOTIFICATION_TEMP_FILE
+            # No need to create directory since /tmp always exists
+            self.last_update = 0
+            self.notifications = []
+            self._load_notifications()
+            self._cleanup_old_notifications()
+            
+            # Start periodic cleanup
+            self.cleanup_thread = threading.Thread(target=self._periodic_cleanup, daemon=True)
+            self.cleanup_thread.start()
+            logger.info("Notification queue initialized")
+        except Exception as e:
+            handle_error(e, "notification queue initialization", exit_on_error=True)
 
     def _periodic_cleanup(self):
         """Periodically clean up expired notifications."""
         while True:
-            time.sleep(1)  # Check every second
-            self._cleanup_old_notifications()
-            if self.notifications:  # Only update widget if there are notifications
-                self.update_eww_widget()
+            try:
+                time.sleep(1)  # Check every second
+                self._cleanup_old_notifications()
+                if self.notifications:  # Only update widget if there are notifications
+                    self.update_eww_widget()
+            except Exception as e:
+                handle_error(e, "periodic cleanup", exit_on_error=False)
 
     def _load_notifications(self) -> List[Dict[str, Any]]:
-        """Load notifications from cache file."""
+        """Load notifications from cache file.
+        
+        Returns:
+            List of valid notifications
+            
+        Raises:
+            CacheError: If loading fails
+        """
         try:
             if not self.cache_file.exists():
                 logger.debug("No cache file exists, starting with empty notifications")
@@ -96,11 +122,15 @@ class NotificationQueue:
                     logger.error(f"Invalid JSON in cache file: {e}")
                     return []
         except Exception as e:
-            logger.error(f"Error loading notifications: {e}")
+            handle_error(e, "notification loading", exit_on_error=False)
             return []
 
     def _save_notifications(self) -> None:
-        """Save notifications to cache file."""
+        """Save notifications to cache file.
+        
+        Raises:
+            CacheError: If saving fails
+        """
         try:
             # Ensure we don't exceed MAX_NOTIFICATIONS before saving
             if len(self.notifications) > MAX_NOTIFICATIONS:
@@ -116,86 +146,135 @@ class NotificationQueue:
             
             logger.debug(f"Saved {len(self.notifications)} notifications to cache")
         except Exception as e:
-            logger.error(f"Error saving notifications: {e}")
+            handle_error(e, "notification saving", exit_on_error=False)
 
     def _cleanup_old_notifications(self) -> None:
-        """Clean up old notifications and ensure we don't exceed MAX_NOTIFICATIONS."""
-        current_time = time.time()
+        """Clean up old notifications and ensure we don't exceed MAX_NOTIFICATIONS.
         
-        # Remove expired notifications
-        initial_count = len(self.notifications)
-        self.notifications = [
-            n for n in self.notifications 
-            if current_time - n.get('timestamp', 0) <= n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000  # Convert ms to s
-        ]
-        
-        if len(self.notifications) < initial_count:
-            logger.info(f"Removed {initial_count - len(self.notifications)} expired notifications")
-            for n in self.notifications:
-                time_passed = current_time - n.get('timestamp', 0)
-                timeout = n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000
-                logger.debug(f"Notification {n.get('notification_id')}: {time_passed:.1f}s passed, {timeout:.1f}s timeout")
+        Raises:
+            NotificationError: If cleanup fails
+        """
+        try:
+            current_time = time.time()
             
-            # Always update widget when notifications change
-            self._save_notifications()
-            self.update_eww_widget()
-            return
-        
-        # Trim to max size
-        if len(self.notifications) > MAX_NOTIFICATIONS:
-            self.notifications = self.notifications[:MAX_NOTIFICATIONS]
-            logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries")
-            self._save_notifications()
-            self.update_eww_widget()
+            # Remove expired notifications
+            initial_count = len(self.notifications)
+            self.notifications = [
+                n for n in self.notifications 
+                if current_time - n.get('timestamp', 0) <= n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000  # Convert ms to s
+            ]
+            
+            if len(self.notifications) < initial_count:
+                logger.info(f"Removed {initial_count - len(self.notifications)} expired notifications")
+                for n in self.notifications:
+                    time_passed = current_time - n.get('timestamp', 0)
+                    timeout = n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000
+                    logger.debug(f"Notification {n.get('notification_id')}: {time_passed:.1f}s passed, {timeout:.1f}s timeout")
+                
+                # Always update widget when notifications change
+                self._save_notifications()
+                self.update_eww_widget()
+                return
+            
+            # Trim to max size
+            if len(self.notifications) > MAX_NOTIFICATIONS:
+                self.notifications = self.notifications[:MAX_NOTIFICATIONS]
+                logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries")
+                self._save_notifications()
+                self.update_eww_widget()
+        except Exception as e:
+            handle_error(e, "notification cleanup", exit_on_error=False)
 
     def add_notification(self, notification: Dict[str, Any]) -> None:
-        """Add a new notification to the queue."""
-        # Add timestamp if not present
-        if 'timestamp' not in notification:
-            notification['timestamp'] = time.time()
+        """Add a new notification to the queue.
+        
+        Args:
+            notification: Notification dictionary to add
             
-        # Add expire_timeout if not present
-        if 'expire_timeout' not in notification:
-            notification['expire_timeout'] = DEFAULT_TIMEOUT
+        Raises:
+            NotificationError: If adding fails
+        """
+        try:
+            # Add timestamp if not present
+            if 'timestamp' not in notification:
+                notification['timestamp'] = time.time()
+                
+            # Add expire_timeout if not present
+            if 'expire_timeout' not in notification:
+                notification['expire_timeout'] = DEFAULT_TIMEOUT
 
-        # Add to beginning of list (most recent first)
-        self.notifications.insert(0, notification)
+            # Add to beginning of list (most recent first)
+            self.notifications.insert(0, notification)
 
-        # Ensure we don't exceed MAX_NOTIFICATIONS
-        if len(self.notifications) > MAX_NOTIFICATIONS:
-            self.notifications = self.notifications[:MAX_NOTIFICATIONS]
-            logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries after adding new notification")
+            # Ensure we don't exceed MAX_NOTIFICATIONS
+            if len(self.notifications) > MAX_NOTIFICATIONS:
+                self.notifications = self.notifications[:MAX_NOTIFICATIONS]
+                logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries after adding new notification")
 
-        # Clean up old notifications
-        self._cleanup_old_notifications()
+            # Clean up old notifications
+            self._cleanup_old_notifications()
 
-        # Update widget
-        self.update_eww_widget()
+            # Update widget
+            self.update_eww_widget()
+        except Exception as e:
+            handle_error(e, "notification addition", exit_on_error=False)
 
     def remove_notification(self, notification_id: str) -> None:
-        """Remove a notification from the queue."""
-        initial_count = len(self.notifications)
-        self.notifications = [n for n in self.notifications if n.get('notification_id') != notification_id]
-        if len(self.notifications) < initial_count:
-            logger.info(f"Removed notification {notification_id}")
-            self._save_notifications()
-            self.update_eww_widget()
+        """Remove a notification from the queue.
+        
+        Args:
+            notification_id: ID of notification to remove
+            
+        Raises:
+            NotificationError: If removal fails
+        """
+        try:
+            initial_count = len(self.notifications)
+            self.notifications = [n for n in self.notifications if n.get('notification_id') != notification_id]
+            if len(self.notifications) < initial_count:
+                logger.info(f"Removed notification {notification_id}")
+                self._save_notifications()
+                self.update_eww_widget()
+        except Exception as e:
+            handle_error(e, "notification removal", exit_on_error=False)
 
     def get_notifications(self) -> List[Dict[str, Any]]:
-        """Get all notifications."""
-        # Clean up before returning
-        self._cleanup_old_notifications()
-        return self.notifications
+        """Get all notifications.
+        
+        Returns:
+            List of all notifications
+            
+        Raises:
+            NotificationError: If retrieval fails
+        """
+        try:
+            # Clean up before returning
+            self._cleanup_old_notifications()
+            return self.notifications
+        except Exception as e:
+            handle_error(e, "notification retrieval", exit_on_error=False)
+            return []
 
-    def clear_notifications(self) -> None:
-        """Clear all notifications."""
-        self.notifications = []
-        self._save_notifications()
-        self.update_eww_widget()
-        logger.info("Cleared all notifications")
+    def clear(self) -> None:
+        """Clear all notifications.
+        
+        Raises:
+            NotificationError: If clearing fails
+        """
+        try:
+            self.notifications = []
+            self._save_notifications()
+            self.update_eww_widget()
+            logger.info("Cleared all notifications")
+        except Exception as e:
+            handle_error(e, "notification clearing", exit_on_error=False)
 
     def should_update(self) -> bool:
-        """Check if enough time has passed since last update."""
+        """Check if enough time has passed since last update.
+        
+        Returns:
+            True if enough time has passed, False otherwise
+        """
         current_time = time.time()
         if current_time - self.last_update >= UPDATE_COOLDOWN:
             self.last_update = current_time
@@ -210,6 +289,9 @@ class NotificationQueue:
         - Eww not running
         - Invalid JSON
         - Command execution failures
+        
+        Raises:
+            NotificationError: If update fails
         """
         # Only update if enough time has passed since the last update
         if not self.should_update():
@@ -228,11 +310,11 @@ class NotificationQueue:
             )
             logger.debug("Updated Eww notifications widget")
         except subprocess.CalledProcessError as e:
-            logger.error(f"Error updating Eww widget: {e}")
+            handle_error(e, "Eww widget update", exit_on_error=False)
             if e.stderr:
                 logger.error(f"Eww error output: {e.stderr}")
         except Exception as e:
-            logger.error(f"Unexpected error updating Eww widget: {e}")
+            handle_error(e, "Eww widget update", exit_on_error=False)
 
     def get_notification(self, notification_id: str) -> Optional[Dict[str, Any]]:
         """Get a specific notification by ID.
@@ -242,23 +324,15 @@ class NotificationQueue:
             
         Returns:
             The notification dictionary if found, None otherwise
+            
+        Raises:
+            NotificationError: If retrieval fails
         """
-        for notification in self.notifications:
-            if notification.get('notification_id') == notification_id:
-                return notification
-        return None
-
-    def update_notification(self, notification_id: str, updates: Dict[str, Any]) -> None:
-        """Update a specific notification with new data.
-        
-        Args:
-            notification_id: The ID of the notification to update
-            updates: Dictionary of fields to update
-        """
-        for notification in self.notifications:
-            if notification.get('notification_id') == notification_id:
-                notification.update(updates)
-                self._save_notifications()
-                self.update_eww_widget()
-                return
-        logger.warning(f"Notification {notification_id} not found for update") 
+        try:
+            for notification in self.notifications:
+                if notification.get('notification_id') == notification_id:
+                    return notification
+            return None
+        except Exception as e:
+            handle_error(e, "notification retrieval", exit_on_error=False)
+            return None 

@@ -3,7 +3,7 @@ Main notification handler module that processes and managing system notification
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 import dbus
 
@@ -11,32 +11,77 @@ from eww_notifier.notification_queue.notification_queue import NotificationQueue
 from eww_notifier.spotify.spotify_handler import SpotifyHandler
 from eww_notifier.notifier.dbus_service import DBusService
 from eww_notifier.notifier.notification_processor import NotificationProcessor
+from eww_notifier.utils.error_handler import handle_error, NotificationError
 
 logger = logging.getLogger(__name__)
 
 class NotificationHandler:
-    """Notification handler for processing and managing system notifications."""
+    """Notification handler for processing and managing system notifications.
+    
+    This class coordinates between different components:
+    - DBusService: Handles D-Bus communication
+    - NotificationProcessor: Processes notification data
+    - NotificationQueue: Manages notification storage
+    - SpotifyHandler: Handles Spotify-specific features
+    """
 
     def __init__(self):
-        """Initialize notification handler."""
-        # Initialize components
-        self.notification_queue = NotificationQueue()
-        self.spotify_handler = SpotifyHandler()
-        self.processor = NotificationProcessor(self.spotify_handler)
-        self.dbus_service = DBusService(self)
-        logger.info("Notification handler initialized")
+        """Initialize notification handler.
+        
+        Raises:
+            NotificationError: If initialization fails
+        """
+        try:
+            # Initialize components
+            self.notification_queue = NotificationQueue()
+            self.spotify_handler = SpotifyHandler()
+            self.processor = NotificationProcessor(self.spotify_handler)
+            self.dbus_service = DBusService(self)
+            logger.info("Notification handler initialized")
+        except Exception as e:
+            handle_error(e, "notification handler initialization", exit_on_error=True)
 
     def start(self):
-        """Start the notification handler."""
+        """Start the notification handler.
+        
+        Raises:
+            NotificationError: If starting fails
+        """
         try:
             logger.info("Starting notification handler")
             self.dbus_service.start()
         except Exception as e:
-            logger.error(f"Error in notification handler: {e}")
-            raise
+            handle_error(e, "notification handler", exit_on_error=True)
 
-    def handle_notification(self, app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout):
-        """Handle incoming notification."""
+    def handle_notification(
+        self,
+        app_name: str,
+        replaces_id: int,
+        app_icon: str,
+        summary: str,
+        body: str,
+        actions: List[str],
+        hints: Dict[str, Any],
+        expire_timeout: int
+    ) -> dbus.UInt32:
+        """Handle incoming notification.
+        
+        Args:
+            app_name: Name of the application
+            replaces_id: ID of notification to replace
+            app_icon: Icon name or path
+            summary: Notification summary
+            body: Notification body
+            actions: List of actions
+            hints: Dictionary of hints
+            expire_timeout: Timeout in milliseconds
+            
+        Returns:
+            Notification ID as D-Bus UInt32
+            
+        Raises:
+            NotificationError: If handling fails
+        """
         try:
             # Log all hints for debugging
             if app_name.lower() == 'spotify':
@@ -60,38 +105,94 @@ class NotificationHandler:
             self.process_notification(notification)
             return dbus.UInt32(int(notification['notification_id']))
         except Exception as e:
-            logger.error(f"Error processing notification: {e}")
+            handle_error(e, "notification handling", exit_on_error=False)
             return dbus.UInt32(0)
 
-    def close_notification(self, notification_id):
-        """Close a notification."""
+    def close_notification(self, notification_id: int) -> None:
+        """Close a notification.
+        
+        Args:
+            notification_id: ID of notification to close
+            
+        Raises:
+            NotificationError: If closing fails
+        """
         try:
             notification_id = str(notification_id)
             self.remove_notification(notification_id)
             logger.info(f"Closed notification {notification_id}")
         except Exception as e:
-            logger.error(f"Error closing notification: {e}")
+            handle_error(e, "notification closing", exit_on_error=False)
 
     def process_notification(self, notification: Dict[str, Any]) -> None:
-        """Process a notification dictionary and add it to the queue."""
+        """Process a notification dictionary and add it to the queue.
+        
+        Args:
+            notification: Notification dictionary to process
+            
+        Raises:
+            NotificationError: If processing fails
+        """
         try:
             self.notification_queue.add_notification(notification)
             logger.info(f"Processed notification: {notification.get('summary')}")
         except Exception as e:
-            logger.error(f"Error processing notification: {e}")
+            handle_error(e, "notification processing", exit_on_error=False)
 
     def remove_notification(self, notification_id: str) -> None:
-        """Remove a notification from the queue."""
-        self.notification_queue.remove_notification(notification_id)
+        """Remove a notification from the queue.
+        
+        Args:
+            notification_id: ID of notification to remove
+            
+        Raises:
+            NotificationError: If removal fails
+        """
+        try:
+            self.notification_queue.remove_notification(notification_id)
+        except Exception as e:
+            handle_error(e, "notification removal", exit_on_error=False)
 
     def clear_notifications(self) -> None:
-        """Clear all notifications from the queue."""
-        self.notification_queue.clear()
+        """Clear all notifications from the queue.
+        
+        Raises:
+            NotificationError: If clearing fails
+        """
+        try:
+            self.notification_queue.clear()
+        except Exception as e:
+            handle_error(e, "notification clearing", exit_on_error=False)
 
     def get_notifications(self) -> List[Dict[str, Any]]:
-        """Get all notifications from the queue."""
-        return self.notification_queue.get_notifications()
+        """Get all notifications from the queue.
+        
+        Returns:
+            List of notification dictionaries
+            
+        Raises:
+            NotificationError: If retrieval fails
+        """
+        try:
+            return self.notification_queue.get_notifications()
+        except Exception as e:
+            handle_error(e, "notification retrieval", exit_on_error=False)
+            return []
 
-    def get_notification(self, notification_id: str) -> Dict[str, Any]:
-        """Get a specific notification from the queue."""
-        return self.notification_queue.get_notification(notification_id) 
+    def get_notification(self, notification_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific notification from the queue.
+        
+        Args:
+            notification_id: ID of notification to get
+            
+        Returns:
+            Notification dictionary or None if not found
+            
+        Raises:
+            NotificationError: If retrieval fails
+        """
+        try:
+            return self.notification_queue.get_notification(notification_id)
+        except Exception as e:
+            handle_error(e, "notification retrieval", exit_on_error=False)
+            return None 

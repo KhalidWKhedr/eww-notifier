@@ -2,15 +2,14 @@
 Main entry point for the notification system.
 """
 
-import sys
-import signal
 import logging
-from pathlib import Path
+import signal
+import sys
 
 from eww_notifier.config import NOTIFICATION_PERMISSION_TEST
 from eww_notifier.notifier.notification_handler import NotificationHandler
-from eww_notifier.utils.logging_config import setup_logging
 from eww_notifier.utils.error_handler import handle_error, PermissionError
+from eww_notifier.utils.logging_config import setup_logging
 
 # Set up logging
 setup_logging()
