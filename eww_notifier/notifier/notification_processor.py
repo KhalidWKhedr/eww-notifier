@@ -20,8 +20,7 @@ from eww_notifier.icon_config import APP_ICONS
 from eww_notifier.notifier.notification_utils import get_urgency, process_actions, process_hints
 from eww_notifier.utils import find_icon_path
 from eww_notifier.utils.error_handler import handle_error, NotificationError
-
-logger = logging.getLogger(__name__)
+from containers import Container
 
 class NotificationProcessor:
     """Processor for handling notification data.
@@ -33,19 +32,21 @@ class NotificationProcessor:
     - Handling Spotify-specific features
     """
 
-    def __init__(self, spotify_handler):
+    def __init__(self, container: Container, spotify_handler):
         """Initialize notification processor.
         
         Args:
+            container: Container for dependency injection
             spotify_handler: Handler for Spotify-specific features
             
         Raises:
             NotificationError: If initialization fails
         """
         try:
+            self.logger = container.logging_service()
             self.spotify_handler = spotify_handler
             self.notification_id_counter = 1
-            logger.info("Notification processor initialized")
+            self.logger.info("Notification processor initialized")
         except Exception as e:
             handle_error(e, "notification processor initialization", exit_on_error=True)
 
@@ -70,7 +71,7 @@ class NotificationProcessor:
         try:
             if self.notification_id_counter >= 4294967295:  # Reset if we reach max
                 self.notification_id_counter = 1
-                logger.info("Reset notification ID counter")
+                self.logger.info("Reset notification ID counter")
 
             # Use a combination of counter and hash for uniqueness
             unique_str = f"{app_name}{summary}{body}{self.notification_id_counter}"
@@ -78,7 +79,7 @@ class NotificationProcessor:
             # Take first 4 bytes of hash and convert to integer
             notification_id = int.from_bytes(hash_obj.digest()[:4], byteorder='big')
             self.notification_id_counter += 1
-            logger.debug(f"Generated notification ID: {notification_id}")
+            self.logger.debug(f"Generated notification ID: {notification_id}")
             return notification_id
         except Exception as e:
             handle_error(e, "notification ID generation", exit_on_error=False)
@@ -122,7 +123,7 @@ class NotificationProcessor:
         try:
             # Generate a unique ID for this notification
             notif_id = replaces_id if replaces_id else self.generate_notification_id(app_name, summary, body)
-            logger.debug(f"Processing notification {notif_id} from {app_name}")
+            self.logger.debug(f"Processing notification {notif_id} from {app_name}")
 
             # Process notification data
             notification = {
@@ -146,7 +147,7 @@ class NotificationProcessor:
             if app_name.lower() == 'spotify':
                 self.handle_spotify_notification(notification, hints)
 
-            logger.debug(f"Successfully processed notification {notif_id}")
+            self.logger.debug(f"Successfully processed notification {notif_id}")
             return notification
         except Exception as e:
             handle_error(e, "notification processing", exit_on_error=False)
@@ -187,13 +188,13 @@ class NotificationProcessor:
                     metadata = spotify.Metadata
                     url = metadata.get("mpris:artUrl", "")
                     if url.startswith("https://"):
-                        logger.info(f"Got album art URL from MPRIS: {url}")
+                        self.logger.info(f"Got album art URL from MPRIS: {url}")
                         album_art_path = self.spotify_handler.get_album_art_path("mpris")
                         if album_art_path:
-                            logger.info(f"Using album art from MPRIS: {album_art_path}")
+                            self.logger.info(f"Using album art from MPRIS: {album_art_path}")
                             image = album_art_path
                 except Exception as e:
-                    logger.warning(f"Failed to get album art from MPRIS: {e}")
+                    self.logger.warning(f"Failed to get album art from MPRIS: {e}")
 
                 # Fallback to notification hints if MPRIS fails
                 if not image and hints:
@@ -202,7 +203,7 @@ class NotificationProcessor:
                         if isinstance(value, str) and value.startswith('https://'):
                             album_art_path = self.spotify_handler.get_album_art_path(value)
                             if album_art_path:
-                                logger.info(f"Using album art from hints: {album_art_path}")
+                                self.logger.info(f"Using album art from hints: {album_art_path}")
                                 image = album_art_path
                                 break
 
@@ -238,26 +239,26 @@ class NotificationProcessor:
                         continue
                     if key == 'image-path' and isinstance(value, str):
                         album_art_url = value
-                        logger.debug(f"Found album art URL in image-path: {album_art_url}")
+                        self.logger.debug(f"Found album art URL in image-path: {album_art_url}")
                         break
                     elif key in ['image_url', 'image'] and isinstance(value, str):
                         album_art_url = value
-                        logger.debug(f"Found album art URL in hint '{key}': {album_art_url}")
+                        self.logger.debug(f"Found album art URL in hint '{key}': {album_art_url}")
                         break
 
             if album_art_url:
                 # Add image URL to notification
                 notification['image'] = album_art_url
-                logger.info(f"Added image URL to notification: {album_art_url}")
+                self.logger.info(f"Added image URL to notification: {album_art_url}")
 
                 # Get album art path
                 album_art_path = self.spotify_handler.get_album_art_path(album_art_url)
                 if album_art_path:
                     # Update notification with album art path
                     notification['image'] = album_art_path
-                    logger.info(f"Updated Spotify notification with album art: {album_art_path}")
+                    self.logger.info(f"Updated Spotify notification with album art: {album_art_path}")
                 else:
-                    logger.warning(f"Failed to get album art path for URL: {album_art_url}")
+                    self.logger.warning(f"Failed to get album art path for URL: {album_art_url}")
 
             # Update metadata
             metadata = {
@@ -269,4 +270,8 @@ class NotificationProcessor:
 
         except Exception as e:
             handle_error(e, "Spotify notification handling", exit_on_error=False)
-            raise NotificationError("Failed to handle Spotify notification") from e 
+            raise NotificationError("Failed to handle Spotify notification") from e
+
+    def process_notification(self, notification):
+        self.logger.info(f"Processing notification: {notification}")
+        # Add notification processing logic here 

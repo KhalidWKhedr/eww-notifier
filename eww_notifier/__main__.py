@@ -10,6 +10,7 @@ from eww_notifier.config import NOTIFICATION_PERMISSION_TEST
 from eww_notifier.notifier.notification_handler import NotificationHandler
 from eww_notifier.utils.error_handler import handle_error, PermissionError
 from eww_notifier.utils.logging_config import setup_logging
+from containers import Container
 
 # Set up logging
 setup_logging()
@@ -43,8 +44,11 @@ def main():
         signal.signal(signal.SIGINT, handle_signal)
         signal.signal(signal.SIGTERM, handle_signal)
 
+        # Create a container instance
+        container = Container()
+
         # Initialize and start the notification handler
-        handler = NotificationHandler()
+        handler = NotificationHandler(container)
         handler.start()
     except Exception as e:
         handle_error(e, "main", exit_on_error=True)

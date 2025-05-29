@@ -12,6 +12,7 @@ from eww_notifier.notifier.dbus_service import DBusService
 from eww_notifier.notifier.notification_processor import NotificationProcessor
 from eww_notifier.spotify.spotify_handler import SpotifyHandler
 from eww_notifier.utils.error_handler import handle_error
+from containers import Container
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class NotificationHandler:
     - SpotifyHandler: Handles Spotify-specific features
     """
 
-    def __init__(self):
+    def __init__(self, container: Container):
         """Initialize notification handler.
         
         Raises:
@@ -34,9 +35,10 @@ class NotificationHandler:
         try:
             # Initialize components
             self.notification_queue = NotificationQueue()
-            self.spotify_handler = SpotifyHandler()
-            self.processor = NotificationProcessor(self.spotify_handler)
+            self.spotify_handler = SpotifyHandler(container)
+            self.processor = NotificationProcessor(container, self.spotify_handler)
             self.dbus_service = DBusService(self)
+            self.logger = container.logging_service()
             logger.info("Notification handler initialized")
         except Exception as e:
             handle_error(e, "notification handler initialization", exit_on_error=True)
