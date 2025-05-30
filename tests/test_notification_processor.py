@@ -28,14 +28,16 @@ from unittest.mock import MagicMock
 
 def test_notification_processor_initialization():
     """Test that NotificationProcessor initializes correctly."""
+    mock_logger = MagicMock()
     mock_spotify_handler = MagicMock()
-    processor = NotificationProcessor(mock_spotify_handler)
+    processor = NotificationProcessor(mock_logger, mock_spotify_handler)
     assert processor is not None
 
 def test_process_notification():
     """Test basic notification processing."""
+    mock_logger = MagicMock()
     mock_spotify_handler = MagicMock()
-    processor = NotificationProcessor(mock_spotify_handler)
+    processor = NotificationProcessor(mock_logger, mock_spotify_handler)
     notification = {
         "app_name": "test_app",
         "replaces_id": 0,
@@ -55,8 +57,9 @@ def test_process_notification():
 
 def test_process_spotify_notification():
     """Test Spotify notification processing."""
+    mock_logger = MagicMock()
     mock_spotify_handler = MagicMock()
-    processor = NotificationProcessor(mock_spotify_handler)
+    processor = NotificationProcessor(mock_logger, mock_spotify_handler)
     notification = {
         "app_name": "Spotify",
         "replaces_id": 0,
@@ -75,8 +78,9 @@ def test_process_spotify_notification():
 
 def test_process_notification_with_actions():
     """Test notification processing with actions."""
+    mock_logger = MagicMock()
     mock_spotify_handler = MagicMock()
-    processor = NotificationProcessor(mock_spotify_handler)
+    processor = NotificationProcessor(mock_logger, mock_spotify_handler)
     notification = {
         "app_name": "test_app",
         "replaces_id": 0,
@@ -95,8 +99,9 @@ def test_process_notification_with_actions():
 
 def test_process_notification_with_hints():
     """Test notification processing with hints."""
+    mock_logger = MagicMock()
     mock_spotify_handler = MagicMock()
-    processor = NotificationProcessor(mock_spotify_handler)
+    processor = NotificationProcessor(mock_logger, mock_spotify_handler)
     notification = {
         "app_name": "test_app",
         "replaces_id": 0,

@@ -1,7 +1,6 @@
 class NotificationQueueService:
-    def __init__(self, container):
-        self.container = container
-        self.logger = container.logging_service()
+    def __init__(self, logger):
+        self.logger = logger
         self.logger.info("Notification queue service initialized")
 
     def add_notification(self, notification):

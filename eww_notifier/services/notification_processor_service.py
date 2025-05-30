@@ -1,7 +1,6 @@
 class NotificationProcessorService:
-    def __init__(self, container):
-        self.container = container
-        self.logger = container.logging_service()
+    def __init__(self, logger):
+        self.logger = logger
         self.logger.info("Notification processor service initialized")
 
     def process_notification(self, notification):

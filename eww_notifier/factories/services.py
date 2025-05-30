@@ -23,13 +23,13 @@ def get_dbus_service(notification_handler):
     )
 
 def get_notification_service():
-    return NotificationService()
+    return NotificationService(get_logger())
 
 def get_notification_processor_service():
-    return NotificationProcessorService()
+    return NotificationProcessorService(get_logger())
 
 def get_notification_queue_service():
-    return NotificationQueueService()
+    return NotificationQueueService(get_logger())
 
 # Add other service factories as needed
 
