@@ -5,7 +5,6 @@ Configuration constants and directory setup for the notification system.
 import os
 import logging
 from pathlib import Path
-from eww_notifier.utils.file_utils import create_directories
 
 # Project root directory
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -92,7 +91,7 @@ NOTIFICATION_PERMISSION_TEST = TMP_DIR / "eww_notifier_permission_test"
 LOG_FILE = TMP_DIR / "eww_notifier.log"
 
 # Maximum number of notifications to store
-MAX_NOTIFICATIONS = int(os.getenv("EWW_MAX_NOTIFICATIONS", "50"))
+MAX_NOTIFICATIONS = int(os.getenv("EWW_MAX_NOTIFICATIONS", "10"))
 
 # Notification urgency levels
 URGENCY_LEVELS = {
@@ -112,7 +111,4 @@ SPOTIFY_CACHE_MAX_AGE = int(os.getenv("EWW_SPOTIFY_CACHE_MAX_AGE", str(7 * 24 * 
 UPDATE_COOLDOWN = float(os.getenv("EWW_UPDATE_COOLDOWN", "0.1"))  # Minimum time between Eww widget updates in seconds
 
 # Log level
-LOG_LEVEL = os.getenv("EWW_LOG_LEVEL", "INFO").upper()
-
-# Create the necessary directories
-create_directories() 
+LOG_LEVEL = os.getenv("EWW_LOG_LEVEL", "INFO").upper() 

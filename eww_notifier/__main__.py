@@ -6,23 +6,21 @@ import logging
 import signal
 import sys
 
+import eww_notifier.config as config
 from eww_notifier.config import NOTIFICATION_PERMISSION_TEST
-from eww_notifier.utils.error_handler import handle_error, PermissionError
-from eww_notifier.utils.logging_config import setup_logging
 from eww_notifier.factories import (
     get_logger,
     get_handle_error,
     get_notification_queue,
     get_dbus_service,
 )
-import eww_notifier.config as config
 from eww_notifier.notifier.notification_handler import NotificationHandler
 from eww_notifier.notifier.notification_processor import NotificationProcessor
-from eww_notifier.spotify.spotify_handler import SpotifyHandler
 from eww_notifier.spotify.album_art_handler import AlbumArtHandler
-from eww_notifier.services.notification_service import NotificationService
-from eww_notifier.services.notification_processor_service import NotificationProcessorService
-from eww_notifier.services.notification_queue_service import NotificationQueueService
+from eww_notifier.spotify.spotify_handler import SpotifyHandler
+from eww_notifier.utils.error_handler import handle_error, PermissionError
+from eww_notifier.utils.file_utils import create_directories
+from eww_notifier.utils.logging_config import setup_logging
 
 # Set up logging
 setup_logging()
@@ -48,6 +46,7 @@ def handle_signal(signum, _frame):
 def main():
     """Main entry point for the notification system."""
     try:
+        create_directories()
         # Check permissions first
         if not check_permissions():
             raise PermissionError("Failed permission check")
