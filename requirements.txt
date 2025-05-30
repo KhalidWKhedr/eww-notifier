@@ -2,7 +2,6 @@
 pydbus==0.6.0
 requests==2.32.3
 setuptools==75.5.0
-dependency-injector~=4.47.0
 
 # Arch system packages (install via pacman)
 # python-dbus
