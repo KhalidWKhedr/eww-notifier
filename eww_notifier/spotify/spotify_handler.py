@@ -18,15 +18,14 @@ logger = logging.getLogger(__name__)
 class SpotifyHandler:
     """Handler for Spotify-specific notification features and album art caching."""
 
-    def __init__(self, container=None):
+    def __init__(self, album_art_handler):
         """Initialize Spotify handler with cache directories and cleanup."""
         self.metadata_cache_file = SPOTIFY_CACHE_DIR / "metadata.json"
         self.album_art_dir = SPOTIFY_ALBUM_ART_DIR
         self._ensure_directories()
         self.metadata_cache = self._load_metadata_cache()
-        self.album_art_handler = AlbumArtHandler()
+        self.album_art_handler = album_art_handler
         self._cleanup_cache()
-        # container is accepted for DI compatibility, even if not used
 
     def _ensure_directories(self):
         """Ensure cache directories exist."""

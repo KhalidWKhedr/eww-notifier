@@ -20,7 +20,6 @@ from eww_notifier.icon_config import APP_ICONS
 from eww_notifier.notifier.notification_utils import get_urgency, process_actions, process_hints
 from eww_notifier.utils import find_icon_path
 from eww_notifier.utils.error_handler import handle_error, NotificationError
-from containers import Container
 
 class NotificationProcessor:
     """Processor for handling notification data.
@@ -32,18 +31,18 @@ class NotificationProcessor:
     - Handling Spotify-specific features
     """
 
-    def __init__(self, container: Container, spotify_handler):
+    def __init__(self, logger, spotify_handler):
         """Initialize notification processor.
         
         Args:
-            container: Container for dependency injection
+            logger: Logger instance
             spotify_handler: Handler for Spotify-specific features
             
         Raises:
             NotificationError: If initialization fails
         """
         try:
-            self.logger = container.logging_service()
+            self.logger = logger
             self.spotify_handler = spotify_handler
             self.notification_id_counter = 1
             self.logger.info("Notification processor initialized")

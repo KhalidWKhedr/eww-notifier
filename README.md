@@ -46,6 +46,10 @@ eww-notifier/
 │   ├── spotify/            # Spotify integration
 │   │   ├── __init__.py
 │   │   └── spotify_handler.py
+│   ├── services/
+│   │   ├── notification_service.py
+│   │   ├── notification_processor_service.py
+│   │   └── notification_queue_service.py
 │   └── utils/              # Utility modules
 │       ├── __init__.py
 │       └── error_handler.py
@@ -241,3 +245,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Inspired by the needs of eww/Wayland users
 - Uses Python, pydbus, PyGObject, and requests
 - Special thanks to the eww community
+
+## Dependency Injection (DI) Approach
+
+This project uses **manual dependency injection** via factory functions in `eww_notifier/factories/services.py`. All major services and handlers are instantiated in `__main__.py` using these factories, and dependencies are passed explicitly to constructors. No DI library or container is used, making the codebase simple, explicit, and easy to test.

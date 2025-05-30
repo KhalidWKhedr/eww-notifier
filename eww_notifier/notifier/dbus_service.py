@@ -31,7 +31,7 @@ class DBusService(dbus.service.Object):
     - Provides server capabilities and information
     """
 
-    def __init__(self, notification_handler):
+    def __init__(self, notification_handler, logger, handle_error):
         """Initialize D-Bus service.
         
         This method:
@@ -42,6 +42,8 @@ class DBusService(dbus.service.Object):
         
         Args:
             notification_handler: The notification handler to delegate to
+            logger: Logger instance to use
+            handle_error: Error handler function
             
         Raises:
             DBusError: If initialization fails
@@ -55,14 +57,16 @@ class DBusService(dbus.service.Object):
             
             self.notification_handler = notification_handler
             self.mainloop = GLib.MainLoop()
+            self.logger = logger
+            self.handle_error = handle_error
             
             # Set up signal handlers
             signal.signal(signal.SIGINT, self._handle_signal)
             signal.signal(signal.SIGTERM, self._handle_signal)
             
-            logger.info("D-Bus service initialized")
+            self.logger.info("D-Bus service initialized")
         except Exception as e:
-            handle_error(e, "D-Bus service initialization", exit_on_error=True)
+            self.handle_error(e, "D-Bus service initialization", exit_on_error=True)
 
     def _handle_signal(self, signum: int, _frame: Any) -> None:
         """Handle system signals for graceful shutdown.
@@ -76,7 +80,7 @@ class DBusService(dbus.service.Object):
             signum: Signal number
             _frame: Current stack frame
         """
-        logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+        self.logger.info(f"Received signal {signum}, initiating graceful shutdown...")
         self.mainloop.quit()
         sys.exit(0)
 
@@ -92,10 +96,10 @@ class DBusService(dbus.service.Object):
             DBusError: If service fails to start
         """
         try:
-            logger.info("Starting D-Bus service")
+            self.logger.info("Starting D-Bus service")
             self.mainloop.run()
         except Exception as e:
-            handle_error(e, "D-Bus service", exit_on_error=True)
+            self.handle_error(e, "D-Bus service", exit_on_error=True)
 
     @dbus.service.method(dbus_interface='org.freedesktop.Notifications', in_signature='susssasa{sv}i', out_signature='u')
     def Notify(
@@ -133,12 +137,12 @@ class DBusService(dbus.service.Object):
             DBusError: If notification handling fails
         """
         try:
-            logger.debug(f"Received notification from {app_name}: {summary}")
+            self.logger.debug(f"Received notification from {app_name}: {summary}")
             return self.notification_handler.handle_notification(
                 app_name, replaces_id, app_icon, summary, body, actions, hints, expire_timeout
             )
         except Exception as e:
-            handle_error(e, "notification handling", exit_on_error=False)
+            self.handle_error(e, "notification handling", exit_on_error=False)
             return dbus.UInt32(0)
 
     @dbus.service.method(dbus_interface='org.freedesktop.Notifications', in_signature='u')
@@ -157,10 +161,10 @@ class DBusService(dbus.service.Object):
             DBusError: If notification closing fails
         """
         try:
-            logger.debug(f"Closing notification {notification_id}")
+            self.logger.debug(f"Closing notification {notification_id}")
             self.notification_handler.close_notification(notification_id)
         except Exception as e:
-            handle_error(e, "notification closing", exit_on_error=False)
+            self.handle_error(e, "notification closing", exit_on_error=False)
 
     @dbus.service.method(dbus_interface='org.freedesktop.Notifications', out_signature='as')
     def GetCapabilities(self) -> List[str]:
@@ -191,10 +195,10 @@ class DBusService(dbus.service.Object):
                 "action-icons",
                 "persistence"
             ]
-            logger.debug(f"Returning capabilities: {capabilities}")
+            self.logger.debug(f"Returning capabilities: {capabilities}")
             return capabilities
         except Exception as e:
-            handle_error(e, "capability retrieval", exit_on_error=False)
+            self.handle_error(e, "capability retrieval", exit_on_error=False)
             return []
 
     @dbus.service.method(dbus_interface='org.freedesktop.Notifications', out_signature='ssss')
@@ -215,8 +219,8 @@ class DBusService(dbus.service.Object):
         """
         try:
             info = ("eww-notifier", "eww", "1.0", "1.2")
-            logger.debug(f"Returning server information: {info}")
+            self.logger.debug(f"Returning server information: {info}")
             return info
         except Exception as e:
-            handle_error(e, "server information retrieval", exit_on_error=False)
+            self.handle_error(e, "server information retrieval", exit_on_error=False)
             return "unknown", "unknown", "0.0", "0.0"

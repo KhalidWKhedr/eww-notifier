@@ -1,11 +1,11 @@
 """
-Configuration module for the notification system.
-Contains all constants and configuration settings.
+Configuration constants and directory setup for the notification system.
 """
 
 import os
 import logging
 from pathlib import Path
+from eww_notifier.utils.file_utils import create_directories
 
 # Project root directory
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -76,7 +76,7 @@ DESKTOP_DIRS = [
 ]
 
 # Default icon paths
-DEFAULT_ICON = USR_SHARE / "icons/hicolor/scalable/apps/dialog-information.svg"
+DEFAULT_ICON = USR_SHARE / "icons/Adwaita/symbolic/status/dialog-information-symbolic.svg"
 
 # Spotify paths
 SPOTIFY_CACHE_DIR = TMP_DIR / "eww_spotify"
@@ -113,40 +113,6 @@ UPDATE_COOLDOWN = float(os.getenv("EWW_UPDATE_COOLDOWN", "0.1"))  # Minimum time
 
 # Log level
 LOG_LEVEL = os.getenv("EWW_LOG_LEVEL", "INFO").upper()
-
-def create_directories():
-    """Create necessary directories with proper error handling."""
-    try:
-        SPOTIFY_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        SPOTIFY_ALBUM_ART_DIR.mkdir(parents=True, exist_ok=True)
-    except (PermissionError, OSError) as e:
-        raise RuntimeError(f"Failed to create cache directories: {e}")
-
-class Config:
-    def __init__(self):
-        self.PROJECT_ROOT = PROJECT_ROOT
-        self.HOME = HOME
-        self.TMP_DIR = TMP_DIR
-        self.USR_SHARE = USR_SHARE
-        self.USR_LOCAL = USR_LOCAL
-        self.EWW_WIDGET_VAR = EWW_WIDGET_VAR
-        self.SYSTEM_ICON_DIRS = SYSTEM_ICON_DIRS
-        self.DESKTOP_DIRS = DESKTOP_DIRS
-        self.DEFAULT_ICON = DEFAULT_ICON
-        self.SPOTIFY_CACHE_DIR = SPOTIFY_CACHE_DIR
-        self.SPOTIFY_ALBUM_ART_DIR = SPOTIFY_ALBUM_ART_DIR
-        self.NOTIFICATION_FILE = NOTIFICATION_FILE
-        self.NOTIFICATION_FILE_STR = NOTIFICATION_FILE_STR
-        self.NOTIFICATION_TEMP_FILE = NOTIFICATION_TEMP_FILE
-        self.NOTIFICATION_PERMISSION_TEST = NOTIFICATION_PERMISSION_TEST
-        self.LOG_FILE = LOG_FILE
-        self.MAX_NOTIFICATIONS = MAX_NOTIFICATIONS
-        self.URGENCY_LEVELS = URGENCY_LEVELS
-        self.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT
-        self.SPOTIFY_CACHE_MAX_SIZE = SPOTIFY_CACHE_MAX_SIZE
-        self.SPOTIFY_CACHE_MAX_AGE = SPOTIFY_CACHE_MAX_AGE
-        self.UPDATE_COOLDOWN = UPDATE_COOLDOWN
-        self.LOG_LEVEL = LOG_LEVEL
 
 # Create the necessary directories
 create_directories() 

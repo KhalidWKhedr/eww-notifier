@@ -7,12 +7,7 @@ from typing import Dict, Any, List, Optional
 
 import dbus
 
-from eww_notifier.notification_queue.notification_queue import NotificationQueue
-from eww_notifier.notifier.dbus_service import DBusService
-from eww_notifier.notifier.notification_processor import NotificationProcessor
-from eww_notifier.spotify.spotify_handler import SpotifyHandler
 from eww_notifier.utils.error_handler import handle_error
-from containers import Container
 
 logger = logging.getLogger(__name__)
 
@@ -26,20 +21,19 @@ class NotificationHandler:
     - SpotifyHandler: Handles Spotify-specific features
     """
 
-    def __init__(self, container: Container):
+    def __init__(self, notification_queue, spotify_handler, processor, dbus_service, logger, config):
         """Initialize notification handler.
         
         Raises:
             NotificationError: If initialization fails
         """
         try:
-            # Initialize components from DI container
-            self.notification_queue = container.notification_queue()
-            self.spotify_handler = SpotifyHandler(container)
-            self.processor = NotificationProcessor(container, self.spotify_handler)
-            self.dbus_service = container.dbus_service(self)
-            self.logger = container.logging_service()
-            self.app_config = container.app_config()
+            self.notification_queue = notification_queue
+            self.spotify_handler = spotify_handler
+            self.processor = processor
+            self.dbus_service = dbus_service
+            self.logger = logger
+            self.config = config
             logger.info("Notification handler initialized")
         except Exception as e:
             handle_error(e, "notification handler initialization", exit_on_error=True)
