@@ -38,4 +38,4 @@ __all__ = [
     'NotificationQueue',
     'SpotifyHandler',
     'AlbumArtHandler',
-] 
+]

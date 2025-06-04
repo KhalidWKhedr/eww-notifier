@@ -1,6 +1,7 @@
 # Contributing to eww-notifier
 
-Thank you for your interest in contributing to eww-notifier! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to eww-notifier! This document provides guidelines and instructions for
+contributing.
 
 ## Code of Conduct
 
@@ -12,21 +13,21 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 1. Check if the bug has already been reported in the Issues section
 2. If not, create a new issue with:
-   - A clear, descriptive title
-   - Steps to reproduce the bug
-   - Expected behavior
-   - Actual behavior
-   - Screenshots if applicable
-   - System information (OS, Python version, etc.)
+    - A clear, descriptive title
+    - Steps to reproduce the bug
+    - Expected behavior
+    - Actual behavior
+    - Screenshots if applicable
+    - System information (OS, Python version, etc.)
 
 ### Suggesting Features
 
 1. Check if the feature has already been suggested
 2. If not, create a new issue with:
-   - A clear, descriptive title
-   - Detailed description of the feature
-   - Use cases
-   - Potential implementation approach (if any)
+    - A clear, descriptive title
+    - Detailed description of the feature
+    - Use cases
+    - Potential implementation approach (if any)
 
 ### Pull Requests
 
@@ -113,17 +114,17 @@ By participating in this project, you agree to maintain a respectful and inclusi
 - Limit the first line to 72 characters or less
 - Reference issues and pull requests liberally
 - Consider starting the commit message with an applicable emoji:
-  - 🎨 `:art:` when improving the format/structure of the code
-  - 🐎 `:racehorse:` when improving performance
-  - 🚱 `:non-potable_water:` when plugging memory leaks
-  - 📝 `:memo:` when writing docs
-  - 🐛 `:bug:` when fixing a bug
-  - 🔥 `:fire:` when removing code or files
-  - 💚 `:green_heart:` when fixing the CI build
-  - ✅ `:white_check_mark:` when adding tests
-  - 🔒 `:lock:` when dealing with security
-  - ⬆️ `:arrow_up:` when upgrading dependencies
-  - ⬇️ `:arrow_down:` when downgrading dependencies
+    - 🎨 `:art:` when improving the format/structure of the code
+    - 🐎 `:racehorse:` when improving performance
+    - 🚱 `:non-potable_water:` when plugging memory leaks
+    - 📝 `:memo:` when writing docs
+    - 🐛 `:bug:` when fixing a bug
+    - 🔥 `:fire:` when removing code or files
+    - 💚 `:green_heart:` when fixing the CI build
+    - ✅ `:white_check_mark:` when adding tests
+    - 🔒 `:lock:` when dealing with security
+    - ⬆️ `:arrow_up:` when upgrading dependencies
+    - ⬇️ `:arrow_down:` when downgrading dependencies
 
 ## License
 

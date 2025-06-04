@@ -60,4 +60,4 @@ setup(
             "eww-notifier=eww_notifier.__main__:main",
         ],
     },
-) 
+)

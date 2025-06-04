@@ -16,12 +16,14 @@ def test_metadata_cache(tmp_path):
     loaded = handler._load_metadata_cache()
     assert isinstance(loaded, dict)
 
+
 def test_get_album_art_path_url():
     album_art_handler = MagicMock(spec=AlbumArtHandler)
     album_art_handler.get_album_art_path.return_value = '/tmp/art.png'
     handler = SpotifyHandler(album_art_handler)
     result = handler.get_album_art_path('https://example.com/art.png')
     assert result == '/tmp/art.png'
+
 
 def test_get_album_art_path_mpris(monkeypatch):
     album_art_handler = MagicMock(spec=AlbumArtHandler)
@@ -33,6 +35,7 @@ def test_get_album_art_path_mpris(monkeypatch):
         MockBus.return_value.get.return_value = mock_spotify
         result = handler.get_album_art_path('mpris')
         assert result == '/tmp/art.png'
+
 
 def test_cleanup_cache(tmp_path, monkeypatch):
     album_art_handler = MagicMock(spec=AlbumArtHandler)
@@ -46,4 +49,4 @@ def test_cleanup_cache(tmp_path, monkeypatch):
     os.utime(old_file, (time.time() - 100000, time.time() - 100000))
     handler._cleanup_cache()
     # File should be removed if too old
-    assert not old_file.exists() 
+    assert not old_file.exists()

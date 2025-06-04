@@ -14,6 +14,7 @@ from eww_notifier.config import SPOTIFY_CACHE_DIR, SPOTIFY_ALBUM_ART_DIR, SPOTIF
 
 logger = logging.getLogger(__name__)
 
+
 class SpotifyHandler:
     """Handler for Spotify-specific notification features and album art caching."""
 
@@ -79,7 +80,7 @@ class SpotifyHandler:
             if isinstance(url_or_data, str) and url_or_data.startswith('https://'):
                 logger.info(f"Using provided album art URL: {url_or_data}")
                 return self.album_art_handler.get_album_art_path(url_or_data)
-            
+
             # If url_or_data is 'mpris', get URL from MPRIS
             if url_or_data == 'mpris':
                 bus = SessionBus()
@@ -89,11 +90,11 @@ class SpotifyHandler:
                 if url.startswith("https://"):
                     logger.info(f"Got album art URL from MPRIS: {url}")
                     return self.album_art_handler.get_album_art_path(url)
-            
+
             # If url_or_data is 'hint', we should have received a URL
             if url_or_data == 'hint':
                 logger.warning("Expected URL for 'hint' source but none provided")
-            
+
             return None
         except Exception as e:
             logger.error(f"Error getting album art path: {e}")
@@ -145,13 +146,13 @@ class SpotifyHandler:
 
             # Clean up metadata cache - remove entries pointing to non-existent files
             current_metadata = {}
-            for url_hash, metadata in list(self.metadata_cache.items()): # Iterate over a copy
-                 if 'album_art_path' in metadata and Path(metadata['album_art_path']).exists():
-                     current_metadata[url_hash] = metadata
-                 else:
-                     logger.info(f"Removing metadata for non-existent album art: {url_hash}")
+            for url_hash, metadata in list(self.metadata_cache.items()):  # Iterate over a copy
+                if 'album_art_path' in metadata and Path(metadata['album_art_path']).exists():
+                    current_metadata[url_hash] = metadata
+                else:
+                    logger.info(f"Removing metadata for non-existent album art: {url_hash}")
             self.metadata_cache = current_metadata
             self._save_metadata_cache()
 
         except Exception as e:
-            logger.error(f"Error cleaning up cache: {e}") 
+            logger.error(f"Error cleaning up cache: {e}")

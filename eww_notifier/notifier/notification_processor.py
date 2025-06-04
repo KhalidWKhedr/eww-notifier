@@ -85,15 +85,15 @@ class NotificationProcessor:
             raise NotificationError("Failed to generate notification ID") from e
 
     def process_notification_data(
-        self,
-        app_name: str,
-        replaces_id: int,
-        app_icon: str,
-        summary: str,
-        body: str,
-        actions: List[str],
-        hints: Dict[str, Any],
-        expire_timeout: int
+            self,
+            app_name: str,
+            replaces_id: int,
+            app_icon: str,
+            summary: str,
+            body: str,
+            actions: List[str],
+            hints: Dict[str, Any],
+            expire_timeout: int
     ) -> Dict[str, Any]:
         """Process notification data into a standardized format.
         
@@ -273,4 +273,4 @@ class NotificationProcessor:
 
     def process_notification(self, notification):
         self.logger.info(f"Processing notification: {notification}")
-        # Add notification processing logic here 
+        # Add notification processing logic here

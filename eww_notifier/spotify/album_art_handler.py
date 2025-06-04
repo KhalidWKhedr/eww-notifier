@@ -29,13 +29,13 @@ class AlbumArtHandler:
         """Initialize album art handler with cache directory."""
         self.ALBUM_ART_DIR = SPOTIFY_ALBUM_ART_DIR
         self.ALBUM_ART_CACHE = SPOTIFY_CACHE_DIR / "url_cache.json"
-        
+
         # Cache settings from config
         self.MAX_CACHE_SIZE = SPOTIFY_CACHE_MAX_SIZE
         self.MAX_CACHE_AGE = SPOTIFY_CACHE_MAX_AGE
-        
+
         self.album_art_cache: Dict[str, str] = {}
-        
+
         # Set up cache
         self.setup_cache()
 
@@ -81,26 +81,26 @@ class AlbumArtHandler:
         try:
             # Generate a hash of the URL for the filename
             url_hash = hashlib.md5(url.encode()).hexdigest()
-            
+
             # Check if we already have this URL cached
             if url in self.album_art_cache:
                 cached_path = self.album_art_cache[url]
                 if os.path.exists(cached_path):
                     return cached_path
-            
+
             # Download the image
             response = requests.get(url, timeout=5)
             response.raise_for_status()
-            
+
             # Save to cache
             file_path = self.ALBUM_ART_DIR / f"{url_hash}.jpg"
             with open(file_path, 'wb') as f:
                 f.write(response.content)
-            
+
             # Update cache
             self.album_art_cache[url] = str(file_path)
             self.save_album_art_cache()
-            
+
             return str(file_path)
         except Exception as e:
             logger.error(f"Error getting album art: {e}")
@@ -110,12 +110,12 @@ class AlbumArtHandler:
         """Clean up old and oversized cache entries."""
         try:
             current_time = time.time()
-            
+
             # Remove old files
             for file_path in self.ALBUM_ART_DIR.glob('*'):
                 if not file_path.is_file():
                     continue
-                    
+
                 file_age = current_time - file_path.stat().st_mtime
                 if file_age > self.MAX_CACHE_AGE:
                     try:
@@ -128,7 +128,7 @@ class AlbumArtHandler:
                         logger.info(f"Removed old cache file: {file_path}")
                     except Exception as e:
                         logger.error(f"Error removing old cache file {file_path}: {e}")
-            
+
             # Check total size
             total_size = sum(f.stat().st_size for f in self.ALBUM_ART_DIR.glob('*') if f.is_file())
             if total_size > self.MAX_CACHE_SIZE:
@@ -137,12 +137,12 @@ class AlbumArtHandler:
                     self.ALBUM_ART_DIR.glob('*'),
                     key=lambda x: x.stat().st_mtime
                 )
-                
+
                 # Remove files until we're under the limit
                 for file_path in files:
                     if total_size <= self.MAX_CACHE_SIZE:
                         break
-                        
+
                     try:
                         file_size = file_path.stat().st_size
                         file_path.unlink()
@@ -155,9 +155,9 @@ class AlbumArtHandler:
                         logger.info(f"Removed oversized cache file: {file_path}")
                     except Exception as e:
                         logger.error(f"Error removing oversized cache file {file_path}: {e}")
-            
+
             # Save updated cache
             self.save_album_art_cache()
-            
+
         except Exception as e:
-            logger.error(f"Error cleaning up cache: {e}") 
+            logger.error(f"Error cleaning up cache: {e}")

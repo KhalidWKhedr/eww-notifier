@@ -1,6 +1,7 @@
 # eww-notifier
 
-A custom DBus notification service for Linux desktops, designed to capture, store, and enhance notifications for use with [eww](https://elkowar.github.io/eww/) (the ElKowar Widget Wayland window system).
+A custom DBus notification service for Linux desktops, designed to capture, store, and enhance notifications for use
+with [eww](https://elkowar.github.io/eww/) (the ElKowar Widget Wayland window system).
 
 > **Author:** [KhalidWKhedr](https://github.com/KhalidWKhedr)  
 > **Language:** Python  
@@ -64,15 +65,18 @@ eww-notifier/
 ## Dependencies
 
 ### Core Dependencies
+
 - `dbus-python>=1.2.18`: D-Bus communication
 - `PyGObject>=3.42.0`: GLib integration
 - `pydbus>=0.6.0`: D-Bus handling
 
 ### Image Handling
+
 - `Pillow>=9.5.0`: Image processing
 - `requests>=2.31.0`: HTTP requests for album art
 
 ### Development Tools
+
 - `mypy>=1.5.1`: Static type checking
 - `black>=23.7.0`: Code formatting
 - `flake8>=6.1.0`: Linting
@@ -116,13 +120,15 @@ eww-notifier/
 
 ### Hyprland Integration
 
-To start the service automatically with Hyprland, add this line to your Hyprland config (`~/.config/hypr/hyprland.conf`):
+To start the service automatically with Hyprland, add this line to your Hyprland config (
+`~/.config/hypr/hyprland.conf`):
 
 ```bash
 exec-once = /path/to/eww-notifier/start-eww-notifier.sh
 ```
 
 The startup script:
+
 - Kills any existing instances
 - Starts the service in the background
 - Ensures clean startup on Hyprland launch
@@ -144,13 +150,16 @@ The following environment variables can be used to configure the system:
 
 ## Usage
 
-The service listens for notifications on DBus and writes them to `/tmp/eww_notifications.json`. Spotify album art is cached in `/tmp/eww_spotify/album_art/`.
+The service listens for notifications on DBus and writes them to `/tmp/eww_notifications.json`. Spotify album art is
+cached in `/tmp/eww_spotify/album_art/`.
 
 ### Eww Integration
 
-You can use eww's scripting and JSON widget capabilities to read and display notifications from `/tmp/eww_notifications.json`.
+You can use eww's scripting and JSON widget capabilities to read and display notifications from
+`/tmp/eww_notifications.json`.
 
 Example Eww widget:
+
 ```yuck
 (defwidget notifications []
   (box :orientation "v" :spacing 10
@@ -163,26 +172,31 @@ Example Eww widget:
 ## Development
 
 ### Type Checking
+
 ```sh
 mypy eww_notifier
 ```
 
 ### Code Formatting
+
 ```sh
 black eww_notifier
 ```
 
 ### Linting
+
 ```sh
 flake8 eww_notifier
 ```
 
 ### Testing
+
 ```sh
 pytest
 ```
 
 ### Test Coverage
+
 ```sh
 pytest --cov=eww_notifier
 ```
@@ -194,23 +208,24 @@ pytest --cov=eww_notifier
 ### Common Issues
 
 1. **Notifications not appearing**:
-   - Check the logs: `tail -f /tmp/eww_notifier.log`
-   - Verify D-Bus is running: `systemctl --user status dbus`
-   - Check if the service is running: `ps aux | grep eww_notifier`
+    - Check the logs: `tail -f /tmp/eww_notifier.log`
+    - Verify D-Bus is running: `systemctl --user status dbus`
+    - Check if the service is running: `ps aux | grep eww_notifier`
 
 2. **Spotify album art not showing**:
-   - Check if the cache directory exists: `ls -l /tmp/eww_spotify/album_art/`
-   - Verify the notification file exists: `cat /tmp/eww_notifications.json`
-   - Check file permissions: `ls -l /tmp/eww_notifications.json`
+    - Check if the cache directory exists: `ls -l /tmp/eww_spotify/album_art/`
+    - Verify the notification file exists: `cat /tmp/eww_notifications.json`
+    - Check file permissions: `ls -l /tmp/eww_notifications.json`
 
 3. **Permission issues**:
-   - Check file permissions: `ls -l /tmp/eww_notifications.json`
-   - Verify user has write access to `/tmp`
-   - Check if the service is running as the correct user
+    - Check file permissions: `ls -l /tmp/eww_notifications.json`
+    - Verify user has write access to `/tmp`
+    - Check if the service is running as the correct user
 
 ### Logging
 
 All events and errors are logged in `/tmp/eww_notifier.log`. You can check the logs using:
+
 ```bash
 tail -f /tmp/eww_notifier.log
 ```
@@ -226,6 +241,7 @@ tail -f /tmp/eww_notifier.log
 5. Open a Pull Request
 
 Please make sure to:
+
 - Add tests for new features
 - Update documentation
 - Follow the existing code style
@@ -248,4 +264,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Dependency Injection (DI) Approach
 
-This project uses **manual dependency injection** via factory functions in `eww_notifier/factories/services.py`. All major services and handlers are instantiated in `__main__.py` using these factories, and dependencies are passed explicitly to constructors. No DI library or container is used, making the codebase simple, explicit, and easy to test.
+This project uses **manual dependency injection** via factory functions in `eww_notifier/factories/services.py`. All
+major services and handlers are instantiated in `__main__.py` using these factories, and dependencies are passed
+explicitly to constructors. No DI library or container is used, making the codebase simple, explicit, and easy to test.

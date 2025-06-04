@@ -7,11 +7,11 @@ from eww_notifier.config import HOME, SYSTEM_ICON_DIRS, USR_SHARE, USR_LOCAL
 
 # Icon search paths (in order of priority)
 ICON_DIRS = [
-    str(HOME / ".local/share/icons"),
-    str(HOME / ".icons"),
-    str(USR_SHARE / "icons"),
-    str(USR_LOCAL / "icons"),
-] + [str(path) for path in SYSTEM_ICON_DIRS]
+                str(HOME / ".local/share/icons"),
+                str(HOME / ".icons"),
+                str(USR_SHARE / "icons"),
+                str(USR_LOCAL / "icons"),
+            ] + [str(path) for path in SYSTEM_ICON_DIRS]
 
 # Icon extensions and sizes
 ICON_EXTENSIONS = [".svg", ".png", ".xpm"]
@@ -28,7 +28,7 @@ APP_ICONS = {
     'success': 'dialog-ok',
     'info': 'dialog-information',
     'notify-send': 'dialog-information',
-    
+
     # Browsers
     'firefox': 'firefox',
     'chrome': 'google-chrome',
@@ -37,7 +37,7 @@ APP_ICONS = {
     'opera': 'opera',
     'vivaldi': 'vivaldi',
     'edge': 'microsoft-edge',
-    
+
     # Communication
     'telegram': 'telegram',
     'discord': 'discord',
@@ -48,7 +48,7 @@ APP_ICONS = {
     'thunderbird': 'thunderbird',
     'evolution': 'evolution',
     'mail': 'mail',
-    
+
     # Media
     'spotify': 'spotify',
     'vlc': 'vlc',
@@ -57,7 +57,7 @@ APP_ICONS = {
     'clementine': 'clementine',
     'audacious': 'audacious',
     'kodi': 'kodi',
-    
+
     # Development
     'vscode': 'visual-studio-code',
     'code': 'visual-studio-code',
@@ -66,7 +66,7 @@ APP_ICONS = {
     'gedit': 'gedit',
     'kate': 'kate',
     'geany': 'geany',
-    
+
     # System Tools
     'terminal': 'utilities-terminal',
     'file-manager': 'system-file-manager',
@@ -75,20 +75,20 @@ APP_ICONS = {
     'calendar': 'calendar',
     'clock': 'clock',
     'weather': 'weather-showers',
-    
+
     # Games
     'steam': 'steam',
     'minecraft': 'minecraft',
     'lutris': 'lutris',
     'wine': 'wine',
-    
+
     # Office
     'libreoffice': 'libreoffice',
     'writer': 'libreoffice-writer',
     'calc': 'libreoffice-calc',
     'impress': 'libreoffice-impress',
     'draw': 'libreoffice-draw',
-    
+
     # Utilities
     'screenshot': 'applets-screenshooter',
     'camera': 'camera',
@@ -99,4 +99,4 @@ APP_ICONS = {
     'battery': 'battery',
     'volume': 'audio-volume-high',
     'brightness': 'display-brightness',
-} 
+}

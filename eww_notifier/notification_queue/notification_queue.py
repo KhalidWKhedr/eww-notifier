@@ -21,6 +21,7 @@ from eww_notifier.utils.error_handler import handle_error
 
 logger = logging.getLogger(__name__)
 
+
 class NotificationQueue:
     """Queue for managing notifications with persistence.
     
@@ -45,7 +46,7 @@ class NotificationQueue:
             self.notifications = []
             self._load_notifications()
             self._cleanup_old_notifications()
-            
+
             # Start periodic cleanup
             self.cleanup_thread = threading.Thread(target=self._periodic_cleanup, daemon=True)
             self.cleanup_thread.start()
@@ -84,7 +85,7 @@ class NotificationQueue:
                     if not isinstance(notifications, list):
                         logger.error("Invalid notification cache format: expected list")
                         return []
-                    
+
                     # Validate each notification has required fields
                     valid_notifications = []
                     current_time = time.time()
@@ -92,7 +93,7 @@ class NotificationQueue:
                         if not isinstance(n, dict):
                             logger.warning(f"Skipping invalid notification: {n}")
                             continue
-                        
+
                         # Add missing fields
                         if 'timestamp' not in n:
                             n['timestamp'] = current_time
@@ -100,22 +101,22 @@ class NotificationQueue:
                         if 'expire_timeout' not in n:
                             n['expire_timeout'] = DEFAULT_TIMEOUT
                             logger.warning(f"Added missing expire_timeout to notification: {n}")
-                        
+
                         # Check if notification has expired
                         if current_time - n['timestamp'] > n['expire_timeout'] / 1000:  # Convert ms to s
                             logger.debug(f"Skipping expired notification: {n}")
                             continue
-                            
+
                         valid_notifications.append(n)
 
                     # Sort by timestamp, most recent first
                     notifications = sorted(valid_notifications, key=lambda x: x.get('timestamp', 0), reverse=True)
-                    
+
                     # Enforce MAX_NOTIFICATIONS limit
                     if len(notifications) > MAX_NOTIFICATIONS:
                         notifications = notifications[:MAX_NOTIFICATIONS]
                         logger.info(f"Trimmed loaded notifications to {MAX_NOTIFICATIONS} entries")
-                    
+
                     return notifications
                 except json.JSONDecodeError as e:
                     logger.error(f"Invalid JSON in cache file: {e}")
@@ -135,14 +136,14 @@ class NotificationQueue:
             if len(self.notifications) > MAX_NOTIFICATIONS:
                 self.notifications = self.notifications[:MAX_NOTIFICATIONS]
                 logger.info(f"Trimmed notifications to {MAX_NOTIFICATIONS} entries before saving")
-            
+
             # Save to temporary file first
             with open(self.temp_file, 'w') as f:
                 json.dump(self.notifications, f, indent=2)
-            
+
             # Atomic rename to ensure file consistency
             self.temp_file.replace(self.cache_file)
-            
+
             logger.debug(f"Saved {len(self.notifications)} notifications to cache")
         except Exception as e:
             handle_error(e, "notification saving", exit_on_error=False)
@@ -155,26 +156,28 @@ class NotificationQueue:
         """
         try:
             current_time = time.time()
-            
+
             # Remove expired notifications
             initial_count = len(self.notifications)
             self.notifications = [
-                n for n in self.notifications 
-                if current_time - n.get('timestamp', 0) <= n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000  # Convert ms to s
+                n for n in self.notifications
+                if current_time - n.get('timestamp', 0) <= n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000
+                # Convert ms to s
             ]
-            
+
             if len(self.notifications) < initial_count:
                 logger.info(f"Removed {initial_count - len(self.notifications)} expired notifications")
                 for n in self.notifications:
                     time_passed = current_time - n.get('timestamp', 0)
                     timeout = n.get('expire_timeout', DEFAULT_TIMEOUT) / 1000
-                    logger.debug(f"Notification {n.get('notification_id')}: {time_passed:.1f}s passed, {timeout:.1f}s timeout")
-                
+                    logger.debug(
+                        f"Notification {n.get('notification_id')}: {time_passed:.1f}s passed, {timeout:.1f}s timeout")
+
                 # Always update widget when notifications change
                 self._save_notifications()
                 self.update_eww_widget()
                 return
-            
+
             # Trim to max size
             if len(self.notifications) > MAX_NOTIFICATIONS:
                 self.notifications = self.notifications[:MAX_NOTIFICATIONS]
@@ -197,7 +200,7 @@ class NotificationQueue:
             # Add timestamp if not present
             if 'timestamp' not in notification:
                 notification['timestamp'] = time.time()
-                
+
             # Add expire_timeout if not present
             if 'expire_timeout' not in notification:
                 notification['expire_timeout'] = DEFAULT_TIMEOUT
@@ -334,4 +337,4 @@ class NotificationQueue:
             return None
         except Exception as e:
             handle_error(e, "notification retrieval", exit_on_error=False)
-            return None 
+            return None

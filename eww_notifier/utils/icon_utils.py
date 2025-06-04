@@ -102,7 +102,8 @@ def find_icon_path(icon_name: str, is_recursive: bool = False) -> str:
             for size in ICON_SIZES:
                 for ext in ICON_EXTENSIONS:
                     for subdir in ["apps", "status", "mimetypes", ""]:
-                        path = os.path.join(icon_dir, size, subdir, f"{icon_name}{ext}") if subdir else os.path.join(icon_dir, size, f"{icon_name}{ext}")
+                        path = os.path.join(icon_dir, size, subdir, f"{icon_name}{ext}") if subdir else os.path.join(
+                            icon_dir, size, f"{icon_name}{ext}")
                         if os.path.exists(path):
                             return str(path)
 
@@ -123,4 +124,4 @@ def find_icon_path(icon_name: str, is_recursive: bool = False) -> str:
 
     except Exception as e:
         logger.error(f"Error finding icon path for {icon_name}: {e}")
-        return str(DEFAULT_ICON) 
+        return str(DEFAULT_ICON)

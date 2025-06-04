@@ -111,4 +111,4 @@ SPOTIFY_CACHE_MAX_AGE = int(os.getenv("EWW_SPOTIFY_CACHE_MAX_AGE", str(7 * 24 * 
 UPDATE_COOLDOWN = float(os.getenv("EWW_UPDATE_COOLDOWN", "0.1"))  # Minimum time between Eww widget updates in seconds
 
 # Log level
-LOG_LEVEL = os.getenv("EWW_LOG_LEVEL", "INFO").upper() 
+LOG_LEVEL = os.getenv("EWW_LOG_LEVEL", "INFO").upper()

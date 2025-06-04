@@ -11,11 +11,14 @@ from eww_notifier.utils.error_handler import handle_error
 def get_logger():
     return logging.getLogger('eww_notifier')
 
+
 def get_handle_error():
     return handle_error
 
+
 def get_notification_queue():
     return NotificationQueue()
+
 
 def get_dbus_service(notification_handler):
     return DBusService(
@@ -24,14 +27,16 @@ def get_dbus_service(notification_handler):
         get_handle_error()
     )
 
+
 def get_notification_service():
     return NotificationService(get_logger())
 
+
 def get_notification_processor_service():
     return NotificationProcessorService(get_logger())
+
 
 def get_notification_queue_service():
     return NotificationQueueService(get_logger())
 
 # Add other service factories as needed
-

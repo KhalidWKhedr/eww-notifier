@@ -9,21 +9,26 @@ from typing import Callable
 
 logger = logging.getLogger(__name__)
 
+
 class NotificationError(Exception):
     """Base exception for notification system errors."""
     pass
+
 
 class DBusError(NotificationError):
     """Exception for DBus-related errors."""
     pass
 
+
 class CacheError(NotificationError):
     """Exception for cache-related errors."""
     pass
 
+
 class PermissionError(NotificationError):
     """Exception for permission-related errors."""
     pass
+
 
 def handle_error(error: Exception, context: str, exit_on_error: bool = False) -> None:
     """Handle an error with proper logging and optional exit.
@@ -35,17 +40,18 @@ def handle_error(error: Exception, context: str, exit_on_error: bool = False) ->
     """
     error_type = type(error).__name__
     error_msg = str(error)
-    
+
     logger.error(f"Error in {context}: {error_type}: {error_msg}")
-    
+
     if exit_on_error:
         sys.exit(1)
 
+
 def retry_on_error(
-    max_retries: int = 3,
-    delay: float = 1.0,
-    backoff: float = 2.0,
-    exceptions: tuple = (Exception,)
+        max_retries: int = 3,
+        delay: float = 1.0,
+        backoff: float = 2.0,
+        exceptions: tuple = (Exception,)
 ) -> Callable:
     """Decorator for retrying functions on error.
     
@@ -58,11 +64,12 @@ def retry_on_error(
     Returns:
         Decorated function that will retry on specified exceptions
     """
+
     def decorator(func: Callable) -> Callable:
         def wrapper(*args, **kwargs):
             current_delay = delay
             last_exception = None
-            
+
             for attempt in range(max_retries):
                 try:
                     return func(*args, **kwargs)
@@ -80,7 +87,9 @@ def retry_on_error(
                             f"All {max_retries} attempts failed. Last error: {str(e)}"
                         )
                         raise last_exception
-            
+
             raise last_exception
+
         return wrapper
-    return decorator 
+
+    return decorator

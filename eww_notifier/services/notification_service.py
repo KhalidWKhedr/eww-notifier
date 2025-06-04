@@ -5,4 +5,4 @@ class NotificationService:
 
     def process_notification(self, notification):
         # Process notification logic here
-        self.logger.info(f"Processing notification: {notification}") 
+        self.logger.info(f"Processing notification: {notification}")

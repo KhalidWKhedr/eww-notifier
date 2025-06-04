@@ -11,6 +11,7 @@ from eww_notifier.utils.error_handler import handle_error
 
 logger = logging.getLogger(__name__)
 
+
 class NotificationHandler:
     """Notification handler for processing and managing system notifications.
     
@@ -51,15 +52,15 @@ class NotificationHandler:
             handle_error(e, "notification handler", exit_on_error=True)
 
     def handle_notification(
-        self,
-        app_name: str,
-        replaces_id: int,
-        app_icon: str,
-        summary: str,
-        body: str,
-        actions: List[str],
-        hints: Dict[str, Any],
-        expire_timeout: int
+            self,
+            app_name: str,
+            replaces_id: int,
+            app_icon: str,
+            summary: str,
+            body: str,
+            actions: List[str],
+            hints: Dict[str, Any],
+            expire_timeout: int
     ) -> dbus.UInt32:
         """Handle incoming notification.
         
@@ -192,4 +193,4 @@ class NotificationHandler:
             return self.notification_queue.get_notification(notification_id)
         except Exception as e:
             handle_error(e, "notification retrieval", exit_on_error=False)
-            return None 
+            return None

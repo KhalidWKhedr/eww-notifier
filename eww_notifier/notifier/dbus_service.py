@@ -19,6 +19,7 @@ from gi.repository import GLib
 
 logger = logging.getLogger(__name__)
 
+
 class DBusService(dbus.service.Object):
     """D-Bus service for handling system notifications.
     
@@ -52,16 +53,16 @@ class DBusService(dbus.service.Object):
             bus = dbus.SessionBus()
             bus_name = dbus.service.BusName('org.freedesktop.Notifications', bus=bus)
             dbus.service.Object.__init__(self, bus_name, '/org/freedesktop/Notifications')
-            
+
             self.notification_handler = notification_handler
             self.mainloop = GLib.MainLoop()
             self.logger = logger
             self.handle_error = handle_error
-            
+
             # Set up signal handlers
             signal.signal(signal.SIGINT, self._handle_signal)
             signal.signal(signal.SIGTERM, self._handle_signal)
-            
+
             self.logger.info("D-Bus service initialized")
         except Exception as e:
             self.handle_error(e, "D-Bus service initialization", exit_on_error=True)
@@ -99,17 +100,18 @@ class DBusService(dbus.service.Object):
         except Exception as e:
             self.handle_error(e, "D-Bus service", exit_on_error=True)
 
-    @dbus.service.method(dbus_interface='org.freedesktop.Notifications', in_signature='susssasa{sv}i', out_signature='u')
+    @dbus.service.method(dbus_interface='org.freedesktop.Notifications', in_signature='susssasa{sv}i',
+                         out_signature='u')
     def Notify(
-        self,
-        app_name: str,
-        replaces_id: int,
-        app_icon: str,
-        summary: str,
-        body: str,
-        actions: List[str],
-        hints: Dict[str, Any],
-        expire_timeout: int
+            self,
+            app_name: str,
+            replaces_id: int,
+            app_icon: str,
+            summary: str,
+            body: str,
+            actions: List[str],
+            hints: Dict[str, Any],
+            expire_timeout: int
     ) -> dbus.UInt32:
         """Handle incoming notification.
         

@@ -13,4 +13,4 @@ class NotificationQueueService:
 
     def clear_notifications(self):
         # Clear notifications logic here
-        self.logger.info("Clearing all notifications") 
+        self.logger.info("Clearing all notifications")

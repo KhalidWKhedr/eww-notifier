@@ -14,4 +14,4 @@ __all__ = [
     'get_desktop_icon',
     'find_icon_path',
     'get_file_size_mb'
-] 
+]

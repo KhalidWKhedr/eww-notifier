@@ -16,6 +16,7 @@ def get_file_size_mb(path: Path) -> float:
     """
     return path.stat().st_size / (1024 * 1024)
 
+
 def create_directories():
     """Create necessary directories with proper error handling."""
     from eww_notifier.config import SPOTIFY_CACHE_DIR, SPOTIFY_ALBUM_ART_DIR
@@ -23,4 +24,4 @@ def create_directories():
         SPOTIFY_CACHE_DIR.mkdir(parents=True, exist_ok=True)
         SPOTIFY_ALBUM_ART_DIR.mkdir(parents=True, exist_ok=True)
     except (PermissionError, OSError) as e:
-        raise RuntimeError(f"Failed to create cache directories: {e}") 
+        raise RuntimeError(f"Failed to create cache directories: {e}")

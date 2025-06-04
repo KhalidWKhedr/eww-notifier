@@ -34,6 +34,7 @@ def test_notification_processor_initialization():
     processor = NotificationProcessor(mock_logger, mock_spotify_handler)
     assert processor is not None
 
+
 def test_process_notification():
     """Test basic notification processing."""
     mock_logger = MagicMock()
@@ -49,12 +50,13 @@ def test_process_notification():
         "hints": {},
         "expire_timeout": 5000
     }
-    
+
     result = processor.process_notification_data(**notification)
     assert result is not None
     assert "app" in result
     assert "summary" in result
     assert "body" in result
+
 
 def test_process_spotify_notification():
     """Test Spotify notification processing."""
@@ -71,11 +73,12 @@ def test_process_spotify_notification():
         "hints": {},
         "expire_timeout": 5000
     }
-    
+
     result = processor.process_notification_data(**notification)
     assert result is not None
     assert result["app"] == "Spotify"
     assert "image" in result
+
 
 def test_process_notification_with_actions():
     """Test notification processing with actions."""
@@ -92,11 +95,12 @@ def test_process_notification_with_actions():
         "hints": {},
         "expire_timeout": 5000
     }
-    
+
     result = processor.process_notification_data(**notification)
     assert result is not None
     assert "actions" in result
     assert len(result["actions"]) == 2
+
 
 def test_process_notification_with_hints():
     """Test notification processing with hints."""
@@ -116,9 +120,9 @@ def test_process_notification_with_hints():
         },
         "expire_timeout": 5000
     }
-    
+
     result = processor.process_notification_data(**notification)
     assert result is not None
     assert "urgency" in result
     assert "hints" in result
-    assert "category" in result["hints"] 
+    assert "category" in result["hints"]

@@ -26,6 +26,7 @@ from eww_notifier.utils.logging_config import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
+
 def check_permissions():
     """Check if we have write permissions to require directories."""
     try:
@@ -38,10 +39,12 @@ def check_permissions():
         handle_error(e, "permission check", exit_on_error=True)
         return False
 
+
 def handle_signal(signum, _frame):
     """Handle system signals for graceful shutdown."""
     logger.info(f"Received signal {signum}, initiating graceful shutdown...")
     sys.exit(0)
+
 
 def main():
     """Main entry point for the notification system."""
@@ -78,5 +81,6 @@ def main():
     except Exception as e:
         handle_error(e, "main", exit_on_error=True)
 
+
 if __name__ == "__main__":
-    main() 
+    main()

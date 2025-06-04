@@ -51,4 +51,4 @@ def setup_logging():
     logging.getLogger('eww_notifier.utils').setLevel(logging.INFO)
 
     # Log startup message
-    logging.info("Logging system initialized") 
+    logging.info("Logging system initialized")

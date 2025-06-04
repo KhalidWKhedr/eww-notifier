@@ -107,12 +107,12 @@ def process_hints(hints: Dict[str, Any]) -> Dict[str, Any]:
                 if isinstance(value, (dbus.Array, dbus.Byte, dbus.ByteArray)):
                     logger.debug(f"Skipping D-Bus array/byte for key: {key}")
                     continue
-                    
+
                 # Handle simple types
                 if isinstance(value, (str, int, float, bool)):
                     processed_hints[key] = value
                     logger.debug(f"Processed hint {key}: {value}")
-                    
+
                 # Handle D-Bus variants
                 elif hasattr(value, 'unpack'):
                     try:
@@ -123,8 +123,8 @@ def process_hints(hints: Dict[str, Any]) -> Dict[str, Any]:
                             logger.debug(f"Unpacked hint {key}: {unpacked}")
                     except Exception as e:
                         logger.warning(f"Failed to unpack D-Bus variant for key {key}: {e}")
-                        
+
         return processed_hints
     except Exception as e:
         handle_error(e, "hint processing", exit_on_error=False)
-        return {} 
+        return {}
