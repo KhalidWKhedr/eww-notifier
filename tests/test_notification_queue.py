@@ -1,8 +1,11 @@
 import os
 import tempfile
 import time
+
 import pytest
+
 from eww_notifier.notification_queue.notification_queue import NotificationQueue
+
 
 @pytest.fixture
 def temp_notification_file(monkeypatch):

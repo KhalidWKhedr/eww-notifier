@@ -1,10 +1,12 @@
 import logging
+
 from eww_notifier.notification_queue.notification_queue import NotificationQueue
 from eww_notifier.notifier.dbus_service import DBusService
-from eww_notifier.services.notification_service import NotificationService
 from eww_notifier.services.notification_processor_service import NotificationProcessorService
 from eww_notifier.services.notification_queue_service import NotificationQueueService
+from eww_notifier.services.notification_service import NotificationService
 from eww_notifier.utils.error_handler import handle_error
+
 
 def get_logger():
     return logging.getLogger('eww_notifier')

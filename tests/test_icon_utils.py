@@ -1,6 +1,4 @@
 from unittest.mock import patch
-from eww_notifier.utils import icon_utils
-from unittest.mock import patch
 
 from eww_notifier.utils import icon_utils
 

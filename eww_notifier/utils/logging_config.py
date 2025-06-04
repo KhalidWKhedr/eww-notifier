@@ -8,6 +8,7 @@ from logging.handlers import RotatingFileHandler
 
 from eww_notifier.config import LOG_FILE, LOG_LEVEL
 
+
 def setup_logging():
     """Set up logging configuration."""
     # Create formatters

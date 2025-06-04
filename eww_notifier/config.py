@@ -2,8 +2,8 @@
 Configuration constants and directory setup for the notification system.
 """
 
-import os
 import logging
+import os
 from pathlib import Path
 
 # Project root directory
