@@ -1,10 +1,10 @@
 import os
-import tempfile
-import pytest
 import time
 from unittest.mock import MagicMock, patch
-from eww_notifier.spotify.spotify_handler import SpotifyHandler
+
 from eww_notifier.spotify.album_art_handler import AlbumArtHandler
+from eww_notifier.spotify.spotify_handler import SpotifyHandler
+
 
 def test_metadata_cache(tmp_path):
     album_art_handler = MagicMock(spec=AlbumArtHandler)

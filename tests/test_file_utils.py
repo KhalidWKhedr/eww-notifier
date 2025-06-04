@@ -1,7 +1,3 @@
-import os
-import tempfile
-import pytest
-from pathlib import Path
 from eww_notifier.utils.file_utils import get_file_size_mb, create_directories
 
 def test_get_file_size_mb(tmp_path):

@@ -22,9 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import pytest
-from eww_notifier.notifier.notification_processor import NotificationProcessor
 from unittest.mock import MagicMock
+
+from eww_notifier.notifier.notification_processor import NotificationProcessor
+
 
 def test_notification_processor_initialization():
     """Test that NotificationProcessor initializes correctly."""

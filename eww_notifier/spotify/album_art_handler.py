@@ -7,10 +7,9 @@ import json
 import logging
 import os
 import time
-from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
+
 import requests
-from urllib.parse import urlparse
 
 from eww_notifier.config import (
     SPOTIFY_CACHE_DIR,
@@ -18,7 +17,6 @@ from eww_notifier.config import (
     SPOTIFY_CACHE_MAX_SIZE,
     SPOTIFY_CACHE_MAX_AGE
 )
-from eww_notifier.utils.file_utils import get_file_size_mb
 
 # Configure logging
 logger = logging.getLogger(__name__)

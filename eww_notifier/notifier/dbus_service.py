@@ -17,8 +17,6 @@ import dbus.mainloop.glib
 import dbus.service
 from gi.repository import GLib
 
-from eww_notifier.utils.error_handler import handle_error
-
 logger = logging.getLogger(__name__)
 
 class DBusService(dbus.service.Object):

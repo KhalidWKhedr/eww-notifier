@@ -1,6 +1,9 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from eww_notifier.utils import icon_utils
+from unittest.mock import patch
+
+from eww_notifier.utils import icon_utils
+
 
 def test_get_theme_icon_found(monkeypatch):
     with patch('pathlib.Path.is_dir', return_value=True), \

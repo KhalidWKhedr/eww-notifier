@@ -11,7 +11,6 @@ from typing import Dict, Any, Optional
 from pydbus import SessionBus
 
 from eww_notifier.config import SPOTIFY_CACHE_DIR, SPOTIFY_ALBUM_ART_DIR, SPOTIFY_CACHE_MAX_SIZE, SPOTIFY_CACHE_MAX_AGE
-from .album_art_handler import AlbumArtHandler
 
 logger = logging.getLogger(__name__)
 

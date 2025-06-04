@@ -27,7 +27,7 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 def check_permissions():
-    """Check if we have write permissions to required directories."""
+    """Check if we have write permissions to require directories."""
     try:
         # Test write permission to /tmp
         test_file = NOTIFICATION_PERMISSION_TEST
